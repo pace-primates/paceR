@@ -1,0 +1,20 @@
+---
+title: "paceR Vignette"
+author: "Fernando A. Campos"
+date: "`r Sys.Date()`"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+
+# paceR
+
+`paceR` contains R functions for carrying out common tasks with the University of Calgary's PACE database.
