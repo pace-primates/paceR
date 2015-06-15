@@ -3,9 +3,7 @@ paceR
 
 `paceR` is a collection of functions that make it easy to get data from the University of Calgary's PACE Database into R for further analysis.
 
-*There are no data included in this package.*
-
-To use the tools, you must have access to the PACE Database. If you don't know how to do this, you can ask [[mailto:facampos@ucalgary.ca](mailto:facampos@ucalgary.ca)](Fernando), [[[mailto:urs.kalbitzer@ucalgary.ca](mailto:urs.kalbitzer@ucalgary.ca)](Urs), or [[mailto:jaddicot@ucalgary.ca](mailto:jaddicot@ucalgary.ca)](John).
+To use the tools, you must have access to the PACE Database. If you don't know how to do this, you can ask [Fernando](mailto:facampos@ucalgary.ca), [Urs](mailto:urs.kalbitzer@ucalgary.ca), or [John](mailto:jaddicot@ucalgary.ca).
 
 Preparation
 -----------
