@@ -1,4 +1,12 @@
-
+#' Get any table from PACE without the annoying warning messages.
+#' Note that the foreign key IDs are not matched to their readable equivalents.
+#'
+#' @param pace_db The src_mysql connection to the PACE Database.
+#' @param tbl_name Name of the table, view, or query you want to get.
+#'
+#' @export
+#' @examples
+#' get_pace_tbl(pace_db, "tblGroup")
 get_pace_tbl <- function(pace_db, tbl_name){
 
   get_pace_tbl_internal <- function(pace_db, tbl_name){
@@ -17,6 +25,14 @@ get_pace_tbl <- function(pace_db, tbl_name){
 
 }
 
+#' Get the Individuals table.
+#'
+#' @param pace_db The src_mysql connection to the PACE Database.
+#' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
+#'
+#' @export
+#' @examples
+#' get_individuals(pace_db)
 get_individuals <- function(pace_db, full = TRUE){
 
   individual <- get_pace_tbl(pace_db, "tblIndividual")
