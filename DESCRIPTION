@@ -1,10 +1,19 @@
 Package: paceR
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1
-Date: 2015-04-21
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
-LazyData: TRUE
+Title: Tools for working with the PACE Database
+Version: 1.0
+Date: 2015-06-15
+Authors@R: person("Fernando", "Campos", email = "camposfa@gmail.com",
+  role = c("aut", "cre"))
+Maintainer: Fernando Campos <camposfa@gmail.com>
+Description: Tools for working with the PACE Database
+License: CC0
+Depends:
+  R (>= 3.1.0)
+Imports:
+  magrittr (>= 1.5),
+  plyr (>= 1.8.1),
+  dplyr (>= 0.4.1),
+  lubridate (>= 1.3.3),
+  tidyr (>= 0.2.0),
+  stringr (>= 0.6.2)
