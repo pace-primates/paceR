@@ -79,7 +79,7 @@ get_individuals <- function(pace_db, full = TRUE){
 
   if(!full){
     ind <- ind %>%
-      select(IndividualID, NameOf, ProjectName, DateOfBirth, Sex, Mother)
+      select(IndividualID, NameOf, ProjectName, DateOfBirth, Sex)
   }
 
   return(ind)
