@@ -1,10 +1,14 @@
 ---
-title: "paceR Vignette"
-author: "Fernando A. Campos"
+title: "Basic Usage"
+author: "Fernando Campos"
 date: "`r Sys.Date()`"
 output:
   md_document:
     variant: markdown_github
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, echo = FALSE}
@@ -17,4 +21,70 @@ knitr::opts_chunk$set(
 
 # paceR
 
-`paceR` contains R functions for carrying out common tasks with the University of Calgary's PACE database.
+`paceR` is a collection of functions that make it easy to get data from the University of Calgary's PACE Database into R for further analysis.
+
+_There are no data included in this package._
+
+To use the tools, you must have access to the PACE Database. If you don't know how to do this, you can ask [mailto:facampos@ucalgary.ca](Fernando), [[mailto:urs.kalbitzer@ucalgary.ca](Urs), or [mailto:jaddicot@ucalgary.ca](John).
+
+
+## Preparation
+
+To use this package, you first need to install `devtools` with:
+
+```{r, eval = FALSE}
+    install.packages("devtools")
+```
+
+Then, you can install the latest development version of `paceR` from github:
+
+```{r, eval = FALSE}
+  library(devtools)
+  devtools::install_github("camposfa/paceR")
+```
+
+After you have installed the package once, you can simply load it in the future using:
+
+```{r, message = FALSE, warning = FALSE} 
+  library(paceR)
+```
+
+This package makes heavy use of the data manipulation packages [stringr](http://cran.r-project.org/package=stringr), [lubridate](http://cran.r-project.org/package=lubridate), [tidyr](http://cran.r-project.org/package=tidyr), and [dplyr](http://cran.r-project.org/package=dplyr). If not already installed, `plhdbR` will install these packages automatically. It also provides a convenient function to load them all into your R session, if you want to use them for other tasks:
+
+```{r, message = FALSE}
+  load_pace_packages()
+```
+
+
+## Getting Data from PACE
+
+To get data from PACE, you must create an SSH tunnel. If you have set up your SSH key, you can do it like this (but modify for your connection):
+
+```{r, eval = FALSE}
+system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
+pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+```
+
+```{r, echo = FALSE}
+pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+```
+
+Now we can pull data out.
+
+```{r}
+
+# Get the full individuals table
+get_individuals(pace_db)
+
+# Get a condensed version
+get_individuals(pace_db, full = FALSE)
+
+# Get any table from PACE without warning messages
+# Note that foreign key IDs aren't set!!
+get_pace_tbl(pace_db, "tblIndividualDeath")
+
+```
+
+
+
+
