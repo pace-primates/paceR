@@ -1,5 +1,5 @@
 Sys.setenv(TZ = 'UTC')
-list.of.packages <- list("devtools")
+list.of.packages <- list("devtools", "roxygen2")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(unlist(new.packages))
 lapply(list.of.packages, require, character.only = T)
