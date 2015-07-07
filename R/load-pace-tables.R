@@ -64,19 +64,23 @@ get_individuals <- function(pace_db, full = TRUE){
 
 
   ind <- individual %>%
-    inner_join(project, by = c("ProjectID" = "ProjectID")) %>% # Why not by = "ProjectID" ?
-    inner_join(species, by = c("PrimateSpeciesID")) %>%
-    left_join(mother, by = c("MotherID" = "MotherID")) %>%
-    left_join(sex, by = c("SexID" = "SexID")) %>%
-    left_join(group_birth, by = c("GroupAtBirthID" = "GroupAtBirthID")) %>%
-    left_join(age, by = c("AgeClassAtFirstSightingID" = "AgeClassAtFirstSightingID")) %>%
-    left_join(group_sighting, by = c("GroupAtFirstSightingID" = "GroupAtFirstSightingID")) %>%
-    left_join(vision, by = "VisionPhenotypeID", "VisionPhenotypeID") %>%
+    inner_join(project, by = "ProjectID") %>%
+    inner_join(species, by = "PrimateSpeciesID") %>%
+    left_join(mother, by = "MotherID") %>%
+    left_join(sex, by = "SexID") %>%
+    left_join(group_birth, by = "GroupAtBirthID") %>%
+    left_join(age, by = "AgeClassAtFirstSightingID") %>%
+    left_join(group_sighting, by = "GroupAtFirstSightingID") %>%
+    left_join(vision, by = "VisionPhenotypeID") %>%
     select(IndividualID = ID, ProjectName, PrimateSpecies, NameOf, CodeName, DateOfBirth,
            BirthdateSource, Sex, Mother, MatrilineID, GroupAtBirth,
            DateOfFirstSighting, DayDifference, AgeClassAtFirstSighting,
            GroupAtFirstSighting, VisionPhenotype)
 
+# All comments are sorted out, maybe put them back in for the full-full table?
+# I would also suggest to use rename () and select (-) to select the columns for the final table
+# as this would be easier to know what was sorted out
+  
   if(!full){
     ind <- ind %>%
       select(IndividualID, NameOf, ProjectName, DateOfBirth, Sex)
@@ -159,26 +163,26 @@ get_monthly_census <- function(pace_db, projectID = 1, full = TRUE){
   # Sorted out: StatusCode
 
   census <- project %>%
-    inner_join (., groups, by = "ProjectID") %>%
-    inner_join (., species, by = "PrimateSpeciesID") %>%
-    inner_join (., censusmonthly, by = "GroupID") %>%
-    left_join (., researcher_census, by = "CensusMonthlyID") %>%
-    left_join (., researcher, by = "ResearcherID") %>%
-    left_join (., person, by = "PersonID") %>%
-    left_join (., censusmonthlyindividuals, by = "CensusMonthlyID") %>%
-    left_join (., to_group, by = "ToGroupID") %>%
-    left_join (., from_group, by = "FromGroupID") %>%
-    left_join (., codeagesexclass, by = "AgeSexClassID") %>%
-    left_join (., codeageclass, by = "AgeClassID") %>%
-    left_join (., codesex, by = "SexID") %>%
-    left_join (., individuals_census, by = "IndividualID") %>%
-    left_join (., status, by = "StatusID") %>%
+    inner_join (groups, by = "ProjectID") %>%
+    inner_join (species, by = "PrimateSpeciesID") %>%
+    inner_join (censusmonthly, by = "GroupID") %>%
+    left_join (researcher_census, by = "CensusMonthlyID") %>%
+    left_join (researcher, by = "ResearcherID") %>%
+    left_join (person, by = "PersonID") %>%
+    left_join (censusmonthlyindividuals, by = "CensusMonthlyID") %>%
+    left_join (to_group, by = "ToGroupID") %>%
+    left_join (from_group, by = "FromGroupID") %>%
+    left_join (codeagesexclass, by = "AgeSexClassID") %>%
+    left_join (codeageclass, by = "AgeClassID") %>%
+    left_join (codesex, by = "SexID") %>%
+    left_join (individuals_census, by = "IndividualID") %>%
+    left_join (status, by = "StatusID") %>%
     rename (CensusResearcherName = PersonName) %>%
     select (-PrimateSpeciesID, -ProjectID, -GroupID,
             -ResearcherID, -ResearcherComments, -PersonID,
             -ToGroupID, - FromGroupID,
             -AgeSexClassID, -AgeClassID, -SexID,
-            -IndividualID,
+            #-IndividualID,
             -StatusID)
 
 
