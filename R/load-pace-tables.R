@@ -7,6 +7,7 @@
 #' @export
 #' @examples
 #' get_pace_tbl(pace_db, "tblGroup")
+
 get_pace_tbl <- function(pace_db, tbl_name){
 
   get_pace_tbl_internal <- function(pace_db, tbl_name){
@@ -72,7 +73,7 @@ get_individuals <- function(pace_db, full = TRUE){
     left_join(age, by = "AgeClassAtFirstSightingID") %>%
     left_join(group_sighting, by = "GroupAtFirstSightingID") %>%
     left_join(vision, by = "VisionPhenotypeID") %>%
-    select(IndividualID = ID, ProjectName, PrimateSpecies, NameOf, CodeName, DateOfBirth,
+    select(ProjectID, IndividualID = ID, ProjectName, PrimateSpecies, NameOf, CodeName, DateOfBirth,
            BirthdateSource, Sex, Mother, MatrilineID, GroupAtBirth,
            DateOfFirstSighting, DayDifference, AgeClassAtFirstSighting,
            GroupAtFirstSighting, VisionPhenotype)
