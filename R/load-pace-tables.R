@@ -95,7 +95,7 @@ get_individuals <- function(pace_db, full = TRUE){
 #'
 #' @param pace_db The src_mysql connection to the PACE Database.
 #' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
-#' @param projectID Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)
+#' @param projectID Option to get data only from specific project (1-7?). Default is 1 (Santa Rosa)
 #'
 #' @export
 #' @examples
@@ -201,7 +201,7 @@ get_monthly_census <- function(pace_db, projectID = 1, full = TRUE){
 #'
 #' @param pace_db The src_mysql connection to the PACE Database.
 #' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
-#' @param projectID Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)
+#' @param projectID Option to get data only from specific project (1-7?). Default is 1 (Santa Rosa)
 #'
 #' @export
 #' @examples
@@ -225,7 +225,7 @@ get_biography <- function(pace_db, full = TRUE, projectID = 1){
     select (CauseOfDeathID = ID,  CauseOfDeath)
   
   monthlycensus <- get_monthly_census (pace_db) %>% 
-    filter (ProjectID %in% projectID)
+    filter (ProjectID %in% projectID & !is.na (IndividualID))
   
   lastalive <- monthlycensus %>% 
     filter (Status == "Alive") %>%
@@ -248,16 +248,13 @@ get_biography <- function(pace_db, full = TRUE, projectID = 1){
   biography <- death %>%
     left_join (., codeCauseOfDeath, by = "CauseOfDeathID") %>% 
     left_join (individuals, ., by = "IndividualID") %>%
-    left_join (censusbio, by = "IndividualID") %>% 
-    mutate (DepartType = ifelse (laststatus == "Alive", "End Of Observation",
-                                 ifelse (!is.na(laststatus), laststatus,
-                                         ifelse (!is.na(DateOfDeathFinal), "Dead", "no data on Individual")))) %>% # The first condition is only for individual ID=720 where census-data is missing
+    right_join (censusbio, by = "IndividualID") %>% 
+    mutate (DepartType = ifelse (laststatus == "Alive", "End Of Observation", laststatus)) %>% 
     mutate (DepartDate = ifelse (!is.na (DateOfDeathFinal), DateOfDeathFinal, lastalive)) %>%
     select (-IndividualDeathID, -CauseOfDeathID, -DeathSourceOfInformation,
             -DateOfDeathFinal, -firstalive, -lastalive, -lastcensus, -laststatus) %>% 
     mutate_each (funs (as.Date), DateOfBirth, DateOfFirstSighting, DepartDate)
-  
-  
+
   if(!full){
     biography <- biography %>%
       select (-ProjectID, -PrimateSpecies, -CodeName, -BirthdateSource, -MatrilineID,
@@ -271,7 +268,6 @@ get_biography <- function(pace_db, full = TRUE, projectID = 1){
   # Compare DateOfDeathFinal with lastcensus
   # Check cases where last censusstatus is "Alive" but long time ago --> really end of observation?
   # Check also if in cases where last censusstatus is "Alive" the individual is not dead.
-  # Two individuals (511 and 512) were never censused alive and therefore no DepartDate available (which is derived from lastalive)
   # What ifseveral lines in the end have status "Missing"? -> used lastalive as departdate and laststatus as depart type. Any errors because of that?
   # EntryType is missing
   

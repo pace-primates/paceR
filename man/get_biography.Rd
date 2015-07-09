@@ -11,7 +11,7 @@ get_biography(pace_db, full = TRUE, projectID = 1)
 
 \item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 
-\item{projectID}{Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)}
+\item{projectID}{Option to get data only from specific project (1-7?). Default is 1 (Santa Rosa)}
 }
 \description{
 Get table with biography from birth until death, disappearance or end of observation of individuals.

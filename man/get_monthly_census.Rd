@@ -9,7 +9,7 @@ get_monthly_census(pace_db, projectID = 1, full = TRUE)
 \arguments{
 \item{pace_db}{The src_mysql connection to the PACE Database.}
 
-\item{projectID}{Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)}
+\item{projectID}{Option to get data only from specific project (1-7?). Default is 1 (Santa Rosa)}
 
 \item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 }
