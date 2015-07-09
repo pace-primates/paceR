@@ -28,3 +28,4 @@ ind <- get_individuals(pace_db, full = FALSE)
 # Note that foreign key IDs aren't set!!
 deaths <- get_pace_tbl(pace_db, "tblIndividualDeath")
 
+bio <- get_biography(pace_db)
