@@ -201,3 +201,42 @@ get_monthly_census <- function(pace_db, projectID = 1, full = TRUE){
   }
   return (census)
 }
+
+#' Get the Alphamale-tenure table.
+#'
+#' @param pace_db The src_mysql connection to the PACE Database.
+#' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
+#'
+#' @export
+#' @examples
+#' get_alphamale_tenures(pace_db)
+
+get_alphamale_tenures <- function(pace_db, full = TRUE){
+  
+  
+  amt <- get_pace_tbl(pace_db, "tblAlphaMaleTenure") %>%
+    select (AlphaMaleTenureID = ID, GroupID, AlphaMaleID, AMT_DateStart = DateStart,
+            AMT_DateEnd = DateEnd, AMT_Comments = Comments)
+  
+  
+  # Get the individuals table
+  males_amt <- get_individuals (pace_db) %>% 
+    select (AlphaMaleID = IndividualID, AlphaMale = NameOf, AlphaMaleDOB = DateOfBirth)
+  
+  groups_amt <- get_pace_tbl(pace_db, "tblGroup") %>%
+    select(GroupID = ID, Group = NameCode)
+  
+  alpha_tenures <- amt %>% 
+    inner_join (males_amt, by = "AlphaMaleID") %>% 
+    inner_join (groups_amt, by = "GroupID") %>% 
+    arrange (GroupID, AMT_DateStart) %>% 
+    select (GroupID, Group, AMT_DateStart, AMT_DateEnd, AlphaMaleID, AlphaMale, AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID)
+  
+  if(!full){
+    alpha_tenures <- alpha_tenures %>%
+      select(-GroupID, -AlphaMaleID, -AlphaMaleDOB, -AMT_Comments, -AlphaMaleTenureID)
+  }
+  
+  return(alpha_tenures)
+  
+}
