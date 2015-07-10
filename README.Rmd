@@ -47,7 +47,7 @@ After you have installed the package once, you can simply load it in the future 
   library(paceR)
 ```
 
-This package makes heavy use of the data manipulation packages [stringr](http://cran.r-project.org/package=stringr), [lubridate](http://cran.r-project.org/package=lubridate), [tidyr](http://cran.r-project.org/package=tidyr), and [dplyr](http://cran.r-project.org/package=dplyr). If not already installed, `plhdbR` will install these packages automatically. It also provides a convenient function to load them all into your R session, if you want to use them for other tasks:
+This package makes heavy use of the data manipulation packages [stringr](http://cran.r-project.org/package=stringr), [lubridate](http://cran.r-project.org/package=lubridate), [tidyr](http://cran.r-project.org/package=tidyr), and [dplyr](http://cran.r-project.org/package=dplyr). If not already installed, `paceR` will install these packages automatically. It also provides a convenient function to load them all into your R session, if you want to use them for other tasks:
 
 ```{r, message = FALSE}
   load_pace_packages()
@@ -56,7 +56,7 @@ This package makes heavy use of the data manipulation packages [stringr](http://
 
 ## Getting Data from PACE
 
-To get data from PACE, you must create an SSH tunnel. If you have set up your SSH key, you can do it like this (but modify for your connection):
+To get data from PACE, you must create an SSH tunnel. If you have set up your SSH key, you can do it like this:
 
 ```{r, eval = FALSE}
 system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
@@ -67,7 +67,9 @@ pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", passwo
 pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
 ```
 
-Now we can pull data out.
+It should go without saying, but the above lines are just an example--if copied verbatim, they will **not** work for anyone but me (Fernando). You must first set up the SSH key and then modify these lines for your particular account.
+
+Once you get the connection worked out, you now can pull data from the database.
 
 ```{r}
 
