@@ -53,7 +53,7 @@ get_individuals <- function(pace_db, full = TRUE){
     select(SexID = ID, Sex)
 
   group_birth <- get_pace_tbl(pace_db, "tblGroup") %>%
-    select(GroupAtBirthID = ID, GroupAtBirth = NameLong)
+    select(GroupAtBirthID = ID, GroupAtBirth = NameLong, GroupAtBirthCode = NameCode)
 
   age <- get_pace_tbl(pace_db, "codeAgeClass") %>%
     select(AgeClassAtFirstSightingID = ID, AgeClassAtFirstSighting = AgeClass)
@@ -77,7 +77,7 @@ get_individuals <- function(pace_db, full = TRUE){
     left_join(group_sighting, by = "GroupAtFirstSightingID") %>%
     left_join(vision, by = "VisionPhenotypeID") %>%
     select(ProjectID, IndividualID = ID, ProjectName, PrimateSpecies, NameOf, CodeName, DateOfBirth,
-           BirthdateSource, Sex, Mother, MatrilineID, GroupAtBirth,
+           BirthdateSource, Sex, Mother, MatrilineID, GroupAtBirth, GroupAtBirthCode,
            DateOfFirstSighting, DayDifference, AgeClassAtFirstSighting,
            GroupAtFirstSighting, VisionPhenotype)
 
