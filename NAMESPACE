@@ -3,6 +3,7 @@
 export(get_alphamale_tenures)
 export(get_biography)
 export(get_individuals)
+export(get_infanticide_risk)
 export(get_monthly_census)
 export(get_pace_tbl)
 export(load_pace_packages)
