@@ -75,7 +75,7 @@ get_biography <- function(pace_db, full = TRUE, projectID = 1){
 }
 
 #' Get table with risk of infanticide for infants
-#' as a consequence of alpha male takeovers
+#' as a consequence of alpha male reversals
 #'
 #' Unstable (i.e. risky) periods start with the end of an alpha alpha male tenureship
 #' and infants younger than 1 year are assumed to be at risk.
@@ -202,6 +202,7 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     arrange (Group, RiskDate) %>% 
     select (Group, RiskDate, BirthRisk, InfanticideRisk_Start, New_AM, New_AMT_Start, Old_AM, Old_AMT_End)
   
+  # Determine in which groups infants went after fission of CP
   group_after_CP_fission <- get_monthly_census(pace_db) %>%   
     filter (grepl ("CP", GroupNameCode)) %>% 
     filter (DateOfBirth >= as.Date("2012-01-01") & DateOfBirth < as.Date("2013-01-31")) %>% 
@@ -209,6 +210,9 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     distinct (NameOf, GroupNameCode) %>% 
     select (InfantName = NameOf, GroupDuringInfanticideRisk = GroupNameCode)
   
+  # Check which infants 1) were born at a risky time and
+  # 2) were still presents when the infanticide risk was present (i.e. the tenure of the previous alpha ended)
+  # For CP, determine next Alpha and Risk depending on the group they went after the fission
   infanticide_risk <- infant_biography %>% 
     left_join (birthrisk, by = c("InfantGroupAtBirthCode" = "Group", "InfantDOB" = "RiskDate")) %>%
     # Infants that departed before the infanticide risk was real need to be sorted out
@@ -220,11 +224,13 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     mutate (New_AM = ifelse (New_AM != "Legolas and Buzz (fission)", New_AM,
                              ifelse (InfanticideRisk == "GS", "Legolas",
                                      ifelse (GroupDuringInfanticideRisk == "CPRM", "Legolas", "Buzz")))) %>% 
+    mutate (InfanticideRisk = ifelse (New_AM == "Legolas" & Old_AM == "Legolas", "GS", InfanticideRisk)) %>% 
     select (-BirthRisk, -InfanticideRisk_Start) %>% 
     select (InfantID, InfantName, InfantSex, Mother, InfantDateOfConception, InfantDOB, InfantGroupAtBirth, InfantGroupAtBirthCode,
             InfantDepartDate, AgeAtDepart, Survived1Y, InfanticideRisk, GroupDuringInfanticideRisk, New_AM, New_AMT_Start, Old_AM, Old_AMT_End,
             InfantDepartType, InfantCauseOfDeath, InfantDepartComments)
   
+  # Short version of table
   if(!full){
     infanticide_risk <- infanticide_risk %>%
       select (-InfantSex, -Mother, -InfantDateOfConception, -InfantGroupAtBirth, -Old_AM, -Old_AMT_End)

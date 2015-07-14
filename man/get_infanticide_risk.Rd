@@ -3,7 +3,7 @@
 \name{get_infanticide_risk}
 \alias{get_infanticide_risk}
 \title{Get table with risk of infanticide for infants
-as a consequence of alpha male takeovers}
+as a consequence of alpha male reversals}
 \usage{
 get_infanticide_risk(pace_db, full = TRUE, projectID = 1)
 }
