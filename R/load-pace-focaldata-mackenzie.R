@@ -7,7 +7,7 @@
 #' @examples
 #' get_biography(pace_db)
 
-get_focaldata_MB <- function(pace_db){
+get_focaldata_MB <- function(pace_db, full = TRUE){
   
   # PART 1: Everything with exception of interactant table
   
