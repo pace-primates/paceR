@@ -81,11 +81,14 @@ get_individuals <- function(pace_db, full = TRUE){
            DateOfFirstSighting, DayDifference, AgeClassAtFirstSighting,
            GroupAtFirstSighting, VisionPhenotype)
 
+  ind <- ind %>%
+    mutate_each(funs(as.Date), starts_with("Date"))
+
   # All comments are sorted out, maybe put them back in for the full-full table?
   # I would also suggest to use rename () and select (-) to select the columns for the final table
   # as this would be easier to know what was sorted out
 
-  if(!full){
+  if (!full) {
     ind <- ind %>%
       select(IndividualID, NameOf, ProjectName, DateOfBirth, Sex)
   }
@@ -125,17 +128,17 @@ get_monthly_census <- function(pace_db, projectID = 1, full = TRUE){
            CensusMonthlyComments = Comments)
   # sorted out: CensusYear, CensusMonth
 
-  researcher_census <- get_pace_tbl (pace_db,"tblCensusMonthlyResearcher") %>%
+  researcher_census <- get_pace_tbl(pace_db,"tblCensusMonthlyResearcher") %>%
     select(CensusMonthlyID, ResearcherID)
   # ID, Comments (only three)
 
-  researcher <- get_pace_tbl (pace_db, "tblResearcher") %>%
+  researcher <- get_pace_tbl(pace_db, "tblResearcher") %>%
     select(ResearcherID = ID, PersonID, ResearcherComments = Comments)
   #Sorted out: ProjectID
 
-  person <- get_pace_tbl (pace_db, "tblPerson") %>%
-    mutate (PersonName = paste (NameFirst, NameLast, sep = "_")) %>%
-    select (PersonID = ID, PersonName)
+  person <- get_pace_tbl(pace_db, "tblPerson") %>%
+    mutate(PersonName = paste(NameFirst, NameLast, sep = "_")) %>%
+    select(PersonID = ID, PersonName)
   # Sorted out: EMail, Comments (only 1), NameFirst, NameLast
 
   censusmonthlyindividuals <- get_pace_tbl(pace_db, "tblCensusMonthlyGroupIndivid") %>%
@@ -159,7 +162,7 @@ get_monthly_census <- function(pace_db, projectID = 1, full = TRUE){
     select(SexID = ID, CensusSex = Description)
   # sorted out: Sex
 
-  individuals_census <- get_individuals (pace_db, full = FALSE) %>%
+  individuals_census <- get_individuals(pace_db, full = FALSE) %>%
     select(-ProjectName)
 
   status <- get_pace_tbl(pace_db, "codeCensusMonthlyStatus") %>%
@@ -186,20 +189,24 @@ get_monthly_census <- function(pace_db, projectID = 1, full = TRUE){
            #-ProjectID,
            -GroupID,
            -ResearcherID, -ResearcherComments, -PersonID,
-           -ToGroupID, - FromGroupID,
+           -ToGroupID, -FromGroupID,
            -AgeSexClassID, -AgeClassID, -SexID,
            #-IndividualID,
            -StatusID)
 
+  census <- census %>%
+    mutate_each(funs(as.Date), CensusDateOf, DateOfBirth)
 
-  if(!full){
+
+  if (!full) {
     census <- census %>%
       select(-GroupNameLong, -CensusMonthlyID, -CensusMonthlyComments,
              -CensusResearcherName, -CensusMonthlyGroupIndividID,
              -CensusMonthlyGroupIndividComments, -ToGroupNameLong,
              -FromGroupNameLong)
   }
-  return (census)
+
+  return(census)
 }
 
 #' Get the Alphamale-tenure table.
@@ -212,31 +219,34 @@ get_monthly_census <- function(pace_db, projectID = 1, full = TRUE){
 #' get_alphamale_tenures(pace_db)
 
 get_alphamale_tenures <- function(pace_db, full = TRUE){
-  
-  
+
   amt <- get_pace_tbl(pace_db, "tblAlphaMaleTenure") %>%
-    select (AlphaMaleTenureID = ID, GroupID, AlphaMaleID, AMT_DateStart = DateStart,
+    select(AlphaMaleTenureID = ID, GroupID, AlphaMaleID, AMT_DateStart = DateStart,
             AMT_DateEnd = DateEnd, AMT_Comments = Comments)
-  
-  
+
+
   # Get the individuals table
-  males_amt <- get_individuals (pace_db) %>% 
-    select (AlphaMaleID = IndividualID, AlphaMale = NameOf, AlphaMaleDOB = DateOfBirth)
-  
+  males_amt <- get_individuals(pace_db) %>%
+    select(AlphaMaleID = IndividualID, AlphaMale = NameOf, AlphaMaleDOB = DateOfBirth)
+
   groups_amt <- get_pace_tbl(pace_db, "tblGroup") %>%
     select(GroupID = ID, Group = NameCode)
-  
-  alpha_tenures <- amt %>% 
-    inner_join (males_amt, by = "AlphaMaleID") %>% 
-    inner_join (groups_amt, by = "GroupID") %>% 
-    arrange (GroupID, AMT_DateStart) %>% 
-    select (GroupID, Group, AMT_DateStart, AMT_DateEnd, AlphaMaleID, AlphaMale, AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID)
-  
-  if(!full){
+
+  alpha_tenures <- amt %>%
+    inner_join(males_amt, by = "AlphaMaleID") %>%
+    inner_join(groups_amt, by = "GroupID") %>%
+    arrange(GroupID, AMT_DateStart) %>%
+    select(GroupID, Group, AMT_DateStart, AMT_DateEnd, AlphaMaleID, AlphaMale,
+           AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID)
+
+  alpha_tenures <- alpha_tenures %>%
+    mutate_each(funs(as.Date), contains("Date"), AlphaMaleDOB)
+
+  if (!full) {
     alpha_tenures <- alpha_tenures %>%
       select(-GroupID, -AlphaMaleID, -AlphaMaleDOB, -AMT_Comments, -AlphaMaleTenureID)
   }
-  
+
   return(alpha_tenures)
-  
+
 }
