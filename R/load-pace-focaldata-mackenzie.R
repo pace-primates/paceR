@@ -178,11 +178,18 @@ get_focaldata_MB <- function(pace_db, full = TRUE){
    mutate (InteractantAgeAtFocal = round((as.Date (FocalBegin) - as.Date (InteractantDateOfBirth))/365.25, digits = 1)) %>% 
    select (FocalBehaviourInteractantID, InteractantAgeAtFocal)
  
+ behaviourduration <- focals_mac %>% 
+   distinct (FocalBehaviourID) %>% 
+   filter (BehaviourBegin != BehaviourEnd) %>% 
+   mutate (BehaviourDuration = round (difftime (BehaviourEnd, BehaviourBegin, units = "mins"), digits = 2)) %>% 
+   select (FocalBehaviourID, BehaviourDuration)
  
  focals_mac <- focals_mac %>% 
    left_join(stateduration, by = c("FocalStateID")) %>% 
    left_join(age_and_focalduration, by = "FocalID") %>% 
-   left_join(ageofinteractant, by = c("FocalBehaviourInteractantID"))
+   left_join(ageofinteractant, by = c("FocalBehaviourInteractantID")) %>% 
+   left_join(behaviourduration, by = "FocalBehaviourID") %>% 
+   mutate (BehaviourDuration = ifelse (is.na (BehaviourDuration), 0, BehaviourDuration))
  
  
 # Small table
@@ -191,7 +198,7 @@ get_focaldata_MB <- function(pace_db, full = TRUE){
       select (linenumber, GroupNameCode,
               FocalBegin, FocalEnd, FocalDurationCorrected,
               StateBegin, StateEnd, StateDuration, StateVisibilityStatus, StateSpeciesName, StateBehaviour,
-              SeqNum, BehaviourBegin, BehaviourEnd, BehaviourClassNameOf, BehaviourName, EndedByBehaviourName, 
+              SeqNum, BehaviourBegin, BehaviourEnd, BehaviourDuration, BehaviourClassNameOf, BehaviourName, EndedByBehaviourName, 
               Sex, DateOfBirth, AgeAtFocal, NameOf,
               Role, InteractantRole, IndividualRole,
               InteractantSeqNum, InteractantNameOf, InteractantSex, InteractantDateOfBirth, InteractantAgeAtFocal, InteractantSpeciesName, InteractantKingdom,
