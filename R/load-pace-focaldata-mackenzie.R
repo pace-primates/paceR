@@ -9,8 +9,6 @@
 
 get_focaldata_MB <- function(pace_db, full = TRUE){
   
-  # PART 1: Everything with exception of interactant table
-  
   sessionday <- get_pace_tbl(pace_db, "tblSessionDay") %>% # was mk.1
     select (SessionDayID = ID, ProjectID, SubProjectID, SessionDayDateOf = DateOf, SessionBegin = DateTimeBegin,
             SessionEnd = DateTimeEnd) %>%
@@ -78,7 +76,7 @@ get_focaldata_MB <- function(pace_db, full = TRUE){
   classcode <- get_pace_tbl(pace_db, "codeBehaviourClass") %>%
     select (BehaviourClassID = ID, BehaviourClassNameOf = NameOf)
   
-  focals_mac.1 <- sessionday %>% 
+  focals_mac <- sessionday %>% 
     left_join (contact, by = "SessionDayID") %>% 
     inner_join (focals, by = "ContactID") %>% 
     left_join (individuals, by = "IndividualID") %>% 
@@ -96,17 +94,16 @@ get_focaldata_MB <- function(pace_db, full = TRUE){
     left_join (classcode, by = "BehaviourClassID") %>% 
     select (-GroupID, -DataObserverID, -PersonID, -StateVisibilityStatusID,
             -StateTaxonID, -DirectionID, -BehaviourID, -EndedByBehaviourID, -BehaviourClassID) %>% 
-    mutate (linenumber = row_number ()) %>% # For controls
-    mutate (StateDuration = round (difftime (StateEnd, StateBegin, units = "mins"), digits = 2)) %>% 
-    mutate (FocalDuration = round (difftime (FocalEnd, FocalBegin, units = "mins"), digits = 2))
-  
-  #PART 2: Add the interactant table
+    mutate (linenumber = row_number ()) # For controls
+    
+  # Add the interactant table
   interactantbehaviour <- get_pace_tbl(pace_db, "tblFocalBehaviourInteractant") %>% # Could be filtered though there were problems to collect the filtered tabl
     select (FocalBehaviourInteractantID = ID, FocalBehaviourID,
-            InteractantID, InteractantAgeSexClassID = AgeSexClassID, InteractantRoleID = RoleID,
+            InteractantID, InteractantRoleID = RoleID,
             InteractantAlloSpecificID = AlloSpecificID, InteractantSeqNum = SeqNum)
+  # sorted out: (maybe even more): AgeSexClassID (NA)
   
-  interactants <- get_individuals (pace_db, full = TRUE) %>%
+  interactantindividuals <- get_individuals (pace_db, full = TRUE) %>%
     select (InteractantID = IndividualID, InteractantNameOf = NameOf, InteractantSex = Sex, InteractantDateOfBirth = DateOfBirth)
   
   interactanttaxon <- get_pace_tbl(pace_db, "tblTaxon") %>%
@@ -118,27 +115,27 @@ get_focaldata_MB <- function(pace_db, full = TRUE){
  interactantrole <- get_pace_tbl(pace_db, "codeBehaviourRole") %>%
     select (InteractantRoleID = ID, InteractantRole = Role)
     
- focals_mac.2 <- interactantbehaviour %>% 
-    left_join(interactants, by = "InteractantID") %>% 
-    select (-InteractantID) %>% 
+ interactant <- interactantbehaviour %>% 
+    left_join(interactantindividuals, by = "InteractantID") %>% 
     left_join (interactanttaxon, by = "InteractantAlloSpecificID") %>%
-    select (-InteractantAlloSpecificID) %>%
     left_join (interactantrole, by = "InteractantRoleID") %>%
-    select (-InteractantRoleID) %>% 
-    left_join (focals_mac.1, ., by = "FocalBehaviourID")
+    select (-InteractantID, -InteractantAlloSpecificID, -InteractantRoleID)
+ 
+ focals_mac <- interactant %>% 
+    left_join (focals_mac, ., by = "FocalBehaviourID")
  
  # Create column with Individual role
- focals_mac.3 <- focals_mac.2 %>%
+ individualrole <- focals_mac %>%
    filter (NameOf == InteractantNameOf) %>%
    mutate (IndividualRole = InteractantRole) %>%
-   select (FocalBehaviourID, IndividualRole) %>%
-   left_join (focals_mac.2, ., by = "FocalBehaviourID") %>% 
-   mutate (AgeAtFocal = round((as.Date (FocalBegin) - as.Date (DateOfBirth))/364.25, digits = 1),
-           InteractantAgeAtFocal = round((as.Date (FocalBegin) - as.Date (InteractantDateOfBirth))/364.25, digits = 1))
-  
+   select (FocalBehaviourID, IndividualRole)
+   
+ focals_mac <- individualrole %>% 
+   left_join (focals_mac, ., by = "FocalBehaviourID")
+   
  
  # Remove additional lines from interactant table that are not necessary
- focals_mac.4 <- focals_mac.3 %>% 
+ focals_mac <- focals_mac %>% 
    group_by (FocalBehaviourID) %>%
    mutate (nFBID = n()) %>%
    ungroup () %>%
@@ -152,10 +149,47 @@ get_focaldata_MB <- function(pace_db, full = TRUE){
              (nFBID > 1 & (InteractantNameOf != NameOf | is.na(InteractantNameOf)))) %>% 
    select (-nFBID)
  
+ 
+ # Calculate derived variables (done separately for reduced datasets (i.e. using distinct ()) as much faster than using entire dataset
+ # Also includes correction for out-of-view time
+ stateduration <- focals_mac %>% 
+   distinct (FocalStateID) %>%
+   mutate (StateDuration = round (difftime (StateEnd, StateBegin, units = "mins"), digits = 2)) %>% 
+   select (FocalStateID, StateDuration)
+ 
+ outofview <- focals_mac %>% 
+   distinct (FocalStateID) %>%
+   filter (StateVisibilityStatus == "Out of view") %>%
+   mutate (StateDuration = round (difftime (StateEnd, StateBegin, units = "mins"), digits = 2)) %>% 
+   group_by (FocalID) %>%
+   summarise (OutOfViewDuration = sum (StateDuration))
+
+ age_and_focalduration <- focals_mac %>% 
+   distinct (FocalID) %>% 
+   mutate (AgeAtFocal = round((as.Date (FocalBegin) - as.Date (DateOfBirth))/365.25, digits = 1)) %>% 
+   left_join (outofview, by = "FocalID") %>%
+   mutate (FocalDuration = round (difftime (FocalEnd, FocalBegin, units = "mins"), digits = 2)) %>% 
+   mutate (FocalDurationCorrected = ifelse (is.na(OutOfViewDuration), FocalDuration, FocalDuration - OutOfViewDuration)) %>%
+   select (FocalID, AgeAtFocal, FocalDuration, FocalDurationCorrected)
+ 
+ ageofinteractant <- focals_mac %>% 
+   distinct (FocalBehaviourInteractantID) %>% 
+   filter (NameOf != InteractantNameOf) %>% 
+   mutate (InteractantAgeAtFocal = round((as.Date (FocalBegin) - as.Date (InteractantDateOfBirth))/365.25, digits = 1)) %>% 
+   select (FocalBehaviourInteractantID, InteractantAgeAtFocal)
+ 
+ 
+ focals_mac <- focals_mac %>% 
+   left_join(stateduration, by = c("FocalStateID")) %>% 
+   left_join(age_and_focalduration, by = "FocalID") %>% 
+   left_join(ageofinteractant, by = c("FocalBehaviourInteractantID"))
+ 
+ 
+# Small table
   if(!full){
-    focals_mac.4 <- focals_mac.4 %>%
+    focals_mac <- focals_mac %>%
       select (linenumber, GroupNameCode,
-              FocalBegin, FocalEnd, FocalDuration,
+              FocalBegin, FocalEnd, FocalDurationCorrected,
               StateBegin, StateEnd, StateDuration, StateVisibilityStatus, StateSpeciesName, StateBehaviour,
               SeqNum, BehaviourBegin, BehaviourEnd, BehaviourClassNameOf, BehaviourName, EndedByBehaviourName, 
               Sex, DateOfBirth, AgeAtFocal, NameOf,
@@ -165,5 +199,5 @@ get_focaldata_MB <- function(pace_db, full = TRUE){
               PersonName, FocalComment, StateTaxonComments, BehaviourComments, EthogramBehaviourComment, InteractantTaxonComments)
     
     }
-  return (focals_mac.4)
+  return (focals_mac)
 }
