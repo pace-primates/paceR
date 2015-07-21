@@ -14,16 +14,8 @@ get_pace_tbl <- function(pace_db, tbl_name, collect = TRUE){
   get_pace_tbl_internal <- function(pace_db, tbl_name, collect){
 
     t1 <- pace_db %>%
-      tbl(tbl_name)
-
-    cols <- names(t1)
-
-    if (sum(str_detect(cols, "TimeStamp")) != 0) {
-      t1 <- select(t1, -starts_with("TimeStamp"))
-    }
-    if (sum(str_detect(cols, "UserAdd")) != 0) {
-      t1 <- select(t1, -starts_with("UserAdd"))
-    }
+      tbl(tbl_name) %>%
+      select(everything(), -matches("TimeStamp"), -matches("UserAdd"))
 
     if (collect) {
       return(collect(t1))
