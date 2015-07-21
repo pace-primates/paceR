@@ -20,6 +20,7 @@ load_pace_packages()
 # kill <pid>
 system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
 
 # Get the individuals table
 ind <- get_individuals(pace_db)
@@ -43,10 +44,10 @@ get_infanticide_risk(pace_db)
 res1 <- microbenchmark(
 
   get_individuals(pace_db),
-  get_pace_tbl(pace_db, "paceR_Individual"),
+  get_pace_tbl(paceR_db, "vIndividual"),
 
   get_monthly_census(pace_db),
-  get_pace_tbl(pace_db, "paceR_CensusMonthly"),
+  get_pace_tbl(paceR_db, "vCensusMonthly"),
 
   times = 20
 )
@@ -61,7 +62,7 @@ autoplot(res1)
 
 
 # Q2: Does chaining to a view require executing the entire view?
-get_pace_tbl(pace_db, "paceR_Individual", collect = FALSE) %>%
+get_pace_tbl(paceR_db, "vIndividual", collect = FALSE) %>%
   filter(Project == "SR") %>%
   explain()
 # A2: No, it simply adds to the query
@@ -72,12 +73,12 @@ get_pace_tbl(pace_db, "paceR_Individual", collect = FALSE) %>%
 # Q3: Does chaining a filter to a view speed it up or slow it down?
 res2 <- microbenchmark(
 
-  get_pace_tbl(pace_db, "paceR_CensusMonthly"),
+  get_pace_tbl(paceR_db, "vCensusMonthly"),
 
-  get_pace_tbl(pace_db, "paceR_CensusMonthly") %>%
+  get_pace_tbl(paceR_db, "vCensusMonthly") %>%
     filter(GroupCode == "CP"),
 
-  get_pace_tbl(pace_db, "paceR_CensusMonthly", collect = FALSE) %>%
+  get_pace_tbl(paceR_db, "vCensusMonthly", collect = FALSE) %>%
     filter(GroupCode == "CP") %>%
     collect(),
 
@@ -91,3 +92,6 @@ autoplot(res2)
 
 
 
+temp <- get_pace_tbl(paceR_db, "vFocalData", collect = FALSE) %>%
+  filter(SubProjectID == 13) %>%
+  collect()
