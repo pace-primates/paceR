@@ -4,10 +4,10 @@
 \alias{get_focaldata_MB}
 \title{Get focal behaviour recorded by Mackenzie Bergstrom for her MSc & PhD projects (SubProjectID = 13)}
 \usage{
-get_focaldata_MB(pace_db, full = TRUE)
+get_focaldata_MB(paceR_db, full = TRUE)
 }
 \arguments{
-\item{pace_db}{The src_mysql connection to the PACE Database.}
+\item{paceR_db}{The src_mysql connection to the paceR Database (view-collection).}
 
 \item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 }
@@ -15,6 +15,6 @@ get_focaldata_MB(pace_db, full = TRUE)
 Get focal behaviour recorded by Mackenzie Bergstrom for her MSc & PhD projects (SubProjectID = 13)
 }
 \examples{
-get_biography(pace_db)
+get_focaldata_MB(paceR_db)
 }
 
