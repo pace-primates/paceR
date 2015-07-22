@@ -1,6 +1,8 @@
 paceR
 =====
 
+![ACG Costa Rica](ACG.jpg)
+
 `paceR` is a collection of functions that make it easy to get data from the University of Calgary's PACE Database into R for further analysis.
 
 To use the tools, you must have access to the PACE Database. If you don't know how to do this, you can ask [Fernando](mailto:facampos@ucalgary.ca), [Urs](mailto:urs.kalbitzer@ucalgary.ca), or [John](mailto:jaddicot@ucalgary.ca).
@@ -51,7 +53,7 @@ Once you get the connection worked out, you now can pull data from the database.
 
 # Get the full individuals table
 get_individuals(pace_db)
-#> Source: local data frame [2,227 x 17]
+#> Source: local data frame [2,227 x 18]
 #> 
 #>    ProjectID IndividualID ProjectName PrimateSpecies     NameOf CodeName
 #> 1          1            1  Santa Rosa           CCAP     2Tufts     2TUF
@@ -65,26 +67,27 @@ get_individuals(pace_db)
 #> 9          1           11  Santa Rosa           CCAP Babaganouj     BABA
 #> 10         1           12  Santa Rosa           CCAP   BabyFace     BABY
 #> ..       ...          ...         ...            ...        ...      ...
-#> Variables not shown: DateOfBirth (chr), BirthdateSource (chr), Sex (chr),
-#>   Mother (chr), MatrilineID (int), GroupAtBirth (chr), DateOfFirstSighting
-#>   (chr), DayDifference (int), AgeClassAtFirstSighting (chr),
-#>   GroupAtFirstSighting (chr), VisionPhenotype (chr)
+#> Variables not shown: DateOfBirth (date), BirthdateSource (chr), Sex (chr),
+#>   Mother (chr), MatrilineID (int), GroupAtBirth (chr), GroupAtBirthCode
+#>   (chr), DateOfFirstSighting (date), DayDifference (int),
+#>   AgeClassAtFirstSighting (chr), GroupAtFirstSighting (chr),
+#>   VisionPhenotype (chr)
 
 # Get a condensed version
 get_individuals(pace_db, full = FALSE)
 #> Source: local data frame [2,227 x 5]
 #> 
 #>    IndividualID     NameOf ProjectName DateOfBirth Sex
-#> 1             1     2Tufts  Santa Rosa  1988-01-01   F
-#> 2             2        A-1  Santa Rosa          NA   M
-#> 3             3        Abu  Santa Rosa  2005-04-25   F
-#> 4             6         Al  Santa Rosa  1985-01-01   M
-#> 5             7    Alfredo  Santa Rosa          NA   M
-#> 6             8      Alien  Santa Rosa  1996-01-02   M
-#> 7             9        Amy  Santa Rosa  1989-01-01   F
-#> 8            10      Amy96  Santa Rosa  1996-01-01   U
-#> 9            11 Babaganouj  Santa Rosa  1992-01-01   M
-#> 10           12   BabyFace  Santa Rosa  1991-01-01   M
+#> 1             1     2Tufts  Santa Rosa         MDT   F
+#> 2             2        A-1  Santa Rosa         MDT   M
+#> 3             3        Abu  Santa Rosa         MDT   F
+#> 4             6         Al  Santa Rosa         MST   M
+#> 5             7    Alfredo  Santa Rosa         MDT   M
+#> 6             8      Alien  Santa Rosa         MST   M
+#> 7             9        Amy  Santa Rosa         MST   F
+#> 8            10      Amy96  Santa Rosa         MST   U
+#> 9            11 Babaganouj  Santa Rosa         MST   M
+#> 10           12   BabyFace  Santa Rosa         MST   M
 #> ..          ...        ...         ...         ... ...
 
 # Get any table from PACE without warning messages
