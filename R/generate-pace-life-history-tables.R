@@ -32,14 +32,14 @@ get_biography <- function(pace_db, full = TRUE, projectID = 1){
     filter (Status == "Alive") %>%
     group_by (IndividualID) %>%
     arrange (CensusDateOf) %>%
-    summarise (firstalive = first (CensusDateOf),
-               lastalive = last (CensusDateOf))
+    summarise (FirstAlive = first (CensusDateOf),
+               LastAlive = last (CensusDateOf))
 
   lastcensus <-  monthlycensus %>%
     group_by (IndividualID) %>%
     arrange (desc (CensusDateOf)) %>%
     filter (row_number () == 1) %>%
-    select (IndividualID, lastcensus = CensusDateOf, laststatus = Status)
+    select (IndividualID, LastCensus = CensusDateOf, LastStatus = Status)
 
   censusbio <- lastalive %>%
     full_join (lastcensus, by = "IndividualID") %>%
@@ -50,10 +50,11 @@ get_biography <- function(pace_db, full = TRUE, projectID = 1){
     left_join (., codeCauseOfDeath, by = "CauseOfDeathID") %>%
     left_join (individuals, ., by = "IndividualID") %>%
     right_join (censusbio, by = "IndividualID") %>%
-    mutate (DepartType = ifelse (laststatus == "Alive", "End Of Observation", laststatus)) %>%
-    mutate (DepartDate = ifelse (!is.na (DateOfDeathFinal), DateOfDeathFinal, lastalive)) %>%
+    mutate (DepartType = ifelse (LastStatus == "Alive", "End Of Observation", LastStatus)) %>%
+    mutate (DepartDate = ifelse (!is.na (DateOfDeathFinal), as.Date (DateOfDeathFinal), as.Date (LastAlive))) %>%
+    mutate (DepartDate = as.Date (DepartDate, origin = "1970-01-01")) %>% 
     select (-IndividualDeathID, -CauseOfDeathID, -DeathSourceOfInformation,
-            -DateOfDeathFinal, -firstalive, -lastalive, -lastcensus, -laststatus) %>%
+            -DateOfDeathFinal, -FirstAlive, -LastAlive, -LastCensus, -LastStatus) %>%
     mutate_each (funs (as.Date), DateOfBirth, DateOfFirstSighting, DepartDate)
 
   if(!full){
@@ -230,7 +231,7 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     select (InfantID, InfantName, InfantSex, Mother, InfantDateOfConception, InfantDOB, InfantGroupAtBirth, InfantGroupAtBirthCode,
             InfantDepartDate, AgeAtDepart, Survived1Y, InfanticideRisk, GroupDuringInfanticideRisk, New_AM, New_AMT_Start, Old_AM, Old_AMT_End,
             InfantDepartType, InfantCauseOfDeath, InfantDepartComments)
-  
+
   # Short version of table
   if(!full){
     infanticide_risk <- infanticide_risk %>%
