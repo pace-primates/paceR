@@ -140,9 +140,9 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
   
   tenurestart_risk <- amt %>%
     mutate (TSR = ifelse (is.na(PreviousAM), "GS_unknown",
-                          ifelse (PreviousAM == AM, "GS",
-                                  ifelse (AlphaGap > 165, "GS_unknown", "AMR"))),
-            # If no previous alpha or gap longer than 165 days (i.e. GS_unknown) --> Start = AMT_Start
+                          ifelse (Group == "CPRM" & AM == "Legolas", "GS", # He also was the alpha male before the fission
+                                  ifelse (AlphaGap > 365, "GS_unknown", "AMR"))),
+            # If no previous alpha or gap longer than 365 days (i.e. GS_unknown) --> Start = AMT_Start
             # Otherwise include the gap (i.e. use TenureEnd of previous alpha)
             TSR_Start = ifelse (TSR == "GS_unknown", AMT_DateStart, PreviousAMT_DateEnd),
             TSR_Start = as.Date (TSR_Start, origin = "1970-01-01"),
