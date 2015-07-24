@@ -105,7 +105,8 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     filter (GroupAtBirthCode %in% c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")) %>%
     mutate (InfantDateOfConception = as.Date (DateOfBirth) - 160) %>%
     mutate (AgeAtDepart = round (difftime (DepartDate, DateOfBirth, units = "weeks")/52, 2)) %>% 
-    mutate (Survived1Y = ifelse (AgeAtDepart > 1, "Yes", "No")) %>%
+    mutate (Survived1Y = ifelse (AgeAtDepart > 1, "Yes",
+                                 ifelse (DepartType == "End Of Observation", "<1year at end of observation",  "No"))) %>%
     select (InfantID = IndividualID, InfantName = NameOf, Mother, InfantDateOfConception, InfantDOB = DateOfBirth, 
             InfantSex = Sex, InfantGroupAtBirth = GroupAtBirth, InfantGroupAtBirthCode = GroupAtBirthCode, 
             Survived1Y, InfantDepartDate = DepartDate, AgeAtDepart, InfantDepartType = DepartType,
