@@ -32,14 +32,14 @@ get_biography <- function(pace_db, full = TRUE, projectID = 1){
     filter (Status == "Alive") %>%
     group_by (IndividualID) %>%
     arrange (CensusDateOf) %>%
-    summarise (FirstAlive = first (CensusDateOf),
-               LastAlive = last (CensusDateOf))
+    summarise (FirstAlive = first (CensusDateOf), 
+               LastAlive = last (CensusDateOf) , GroupLastAlive = last (GroupNameCode))
 
   lastcensus <-  monthlycensus %>%
     group_by (IndividualID) %>%
     arrange (desc (CensusDateOf)) %>%
     filter (row_number () == 1) %>%
-    select (IndividualID, LastCensus = CensusDateOf, LastStatus = Status)
+    select (IndividualID, GroupLastListed = GroupNameCode, LastCensus = CensusDateOf, LastStatus = Status)
 
   censusbio <- lastalive %>%
     full_join (lastcensus, by = "IndividualID") %>%
