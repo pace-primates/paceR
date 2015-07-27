@@ -12,6 +12,7 @@ get_focaldata_MB <- function(paceR_db, full = TRUE){
     filter (SubProjectID == 13) %>% 
     filter (Sex == "F") %>% 
     collect %>% 
+    arrange (FocalStateID, FocalBehaviourID, FocalBehaviourInteractantID) %>% # FocalBehaviourID can be used as only NA for unique FocalStateIDs
     mutate (linenumber = row_number ()) # For controls
   
   # not in the view:
