@@ -34,13 +34,14 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
     group_by (FocalBehaviourID) %>%
     mutate (nFBID = n()) %>%
     ungroup () %>%
-    mutate (nFBID = ifelse (is.na(FocalBehaviourID), NA_integer_, nFBID), newlinenumber = row_number ()) %>%
+    mutate (nFBID = ifelse (is.na(FocalBehaviourID), NA_integer_, nFBID),
+            newlinenumber = row_number ()) %>%
     # Filter all lines 
-    ## ...with only one entry in tblFocalBehaviourID, including lines with no tblFocalBehaviourInteractantID:
+    ## 1. with only one entry in tblFocalBehaviourID, including lines with no tblFocalBehaviourInteractantID:
     filter (nFBID == 1 | 
-              # ...or without FocalBehaviourID:
+              # 2. Without FocalBehaviourID:
               is.na(nFBID) | 
-              # ...or where the partner is not the focalindividual if more than 1 line in tblFocalBehaviourID:
+              # 3. Where the partner is not the focalindividual if more than 1 line in tblFocalBehaviourID:
               (nFBID > 1 & (InteractantNameOf != NameOf | is.na(InteractantNameOf)))) %>% 
     select (-nFBID)
   
