@@ -19,6 +19,18 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
   # not in the view:
   # Comments from tblTaxon (state, interactant), tblFocalBehaviour, tblEthogram,  
   
+# Replace Chili by Burrito (the first Chili disappeared in 2003, the Chili in Sarah's data is Burrito in pacelab)
+  # TO DO:
+  # Only temporary solution, this step should be done before importing Sarah's data into pacelab
+  
+  burrito <- get_pace_tbl(paceR_db, "vIndividual", collect = FALSE) %>% 
+    filter (NameOf == "Burrito") %>% 
+    collect ()
+  
+  focal_SC.2 <- focal_SC %>% 
+    mutate (InteractantNameOf = ifelse (InteractantNameOf == "Chili", "Burrito", InteractantNameOf),
+            InteractantDateOfBirth = ifelse (InteractantNameOf == "Chilie", burrito$DateOfBirth, InteractantDateOfBirth))
+  
   # Create column with Individual role
   individualrole <- focal_SC %>%
     filter (NameOf == InteractantNameOf) %>%
