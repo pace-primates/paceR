@@ -27,7 +27,7 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
     filter (NameOf == "Burrito") %>% 
     collect ()
   
-  focal_SC.2 <- focal_SC %>% 
+  focal_SC <- focal_SC %>% 
     mutate (InteractantNameOf = ifelse (InteractantNameOf == "Chili", "Burrito", InteractantNameOf),
             InteractantDateOfBirth = ifelse (InteractantNameOf == "Chilie", burrito$DateOfBirth, InteractantDateOfBirth))
   
