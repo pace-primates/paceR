@@ -2,21 +2,19 @@
 % Please edit documentation in R/load-pace-tables.R
 \name{get_monthly_census}
 \alias{get_monthly_census}
-\title{Get table with group-census data.}
+\title{Get table with group-census data - New Version}
 \usage{
-get_monthly_census(pace_db, projectID = 1, full = TRUE)
+get_monthly_census(paceR_db, full = TRUE)
 }
 \arguments{
-\item{pace_db}{The src_mysql connection to the PACE Database.}
-
-\item{projectID}{Option to get data only from specific project (1-7?). Default is 1 (Santa Rosa)}
+\item{paceR_db}{The src_mysql connection to the paceR Database.}
 
 \item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 }
 \description{
-Get table with group-census data.
+Get table with group-census data - New Version
 }
 \examples{
-get_monthly_census(pace_db)
+get_monthly_census(paceR_db)
 }
 
