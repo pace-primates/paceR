@@ -18,7 +18,8 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
   # All sorted out colums are NA
   # not in the view:
   # Comments from tblTaxon (state, interactant), tblFocalBehaviour, tblEthogram,  
-  
+
+#######  
 # Replace Chili by Burrito (the first Chili disappeared in 2003, the Chili in Sarah's data is Burrito in pacelab)
   # TO DO:
   # Only temporary solution, this step should be done before importing Sarah's data into pacelab
@@ -30,6 +31,8 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
   focal_SC <- focal_SC %>% 
     mutate (InteractantNameOf = ifelse (InteractantNameOf == "Chili", "Burrito", InteractantNameOf),
             InteractantDateOfBirth = ifelse (InteractantNameOf == "Chilie", burrito$DateOfBirth, InteractantDateOfBirth))
+
+##########
   
   # Create column with Individual role
   individualrole <- focal_SC %>%
@@ -86,6 +89,9 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
     mutate (InteractantAgeAtFocal = round((as.Date (FocalBegin) - as.Date (InteractantDateOfBirth))/365.25, digits = 1)) %>% 
     select (FocalBehaviourInteractantID, InteractantAgeAtFocal)
   
+    # View (ageofinteractant %>% select (InteractantNameOf, InteractantDateOfBirth, InteractantAgeAtFocal) %>% 
+          # distinct (InteractantNameOf, InteractantAgeAtFocal))
+  
   behaviourduration <- focal_SC %>% 
     distinct (FocalBehaviourID) %>% 
     #mutate (BehaviourBegin = as.Date (BehaviourBegin), BehaviourEnd = as.Date (BehaviourEnd)) %>% 
@@ -99,6 +105,48 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
     left_join(ageofinteractant, by = c("FocalBehaviourInteractantID")) %>% 
     left_join(behaviourduration, by = "FocalBehaviourID") %>% 
     mutate (BehaviourDuration = ifelse (is.na (BehaviourDuration), 0, BehaviourDuration))
+
+  #############
+  # Add AgeClass from Censusdata
+  
+  safe.ifelse <- function(cond, yes, no) structure(ifelse(cond, yes, no), class = class(yes)) 
+  
+  # TO DO --> use census-query from paceR instead of pace_db
+   partnerAC <- get_monthly_census (pace_db) %>%
+    group_by (NameOf, CensusAgeClass, DateOfBirth, Sex) %>% 
+    summarise (FirstDateAC = min (CensusDateOf),
+               LastDateAC = max (CensusDateOf)) %>% 
+    ungroup %>%
+    mutate (FirstDateAC = safe.ifelse (CensusAgeClass == "Infant",  DateOfBirth, FirstDateAC)) %>% 
+    arrange (NameOf, FirstDateAC) %>% 
+    group_by (NameOf) %>% 
+    mutate (LeftAC = safe.ifelse (!is.na(lead (FirstDateAC)), lead (FirstDateAC) - 1, LastDateAC)) %>%
+    ungroup
+  
+  getAC <- function (Name, Date) {
+    AC <- partnerAC [partnerAC$NameOf == Name & Date %within% new_interval(partnerAC$FirstDateAC, partnerAC$LeftAC), ]$CensusAgeClass
+    AC <- ifelse (grepl ("Juv", Name), "Juvenile",
+                  ifelse (grepl ("Inf", Name), "Infant",
+                          ifelse (grepl ("Adult", Name), "Adult", AC)))
+    AC <- ifelse (length(AC) == 0, "not in census at focaldate", AC)
+    AC <- ifelse (is.na(AC), "not in census at focaldate", AC)
+    return (AC)
+  }
+  
+  sc.temp <- focal_SC %>%
+    filter (!is.na (InteractantNameOf)) %>% 
+    select (Name = InteractantNameOf, Date = FocalBegin) %>% 
+    mutate (Date = as.Date (Date)) %>% 
+    distinct (Name, Date)
+  
+  InteractantAgeClass <- unlist (lapply (1:nrow(sc.temp), function (i) getAC (sc.temp$Name[i], sc.temp$Date[i])))
+  sc.temp <- cbind (sc.temp, InteractantAgeClass)
+  
+  focal_SC <- focal_SC %>% 
+    mutate (Date = as.Date (FocalBegin)) %>% 
+    left_join(., sc.temp, by = c("InteractantNameOf" = "Name", "Date")) %>% 
+    select (-Date)
+  ###############
   
   focal_SC <- focal_SC %>%
     select (linenumber, newlinenumber, PrimateSpeciesCommonName,
@@ -110,7 +158,7 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
             BehaviourBegin, BehaviourEnd, BehaviourDuration, BehaviourName,
             IndividualID, Sex, DateOfBirth, AgeAtFocal, NameOf,
             Role, IndividualRole, InteractantRole, 
-            InteractantID, InteractantNameOf, InteractantSex, InteractantDateOfBirth, InteractantAgeAtFocal, 
+            InteractantID, InteractantNameOf, InteractantSex, InteractantDateOfBirth, InteractantAgeAtFocal, InteractantAgeClass,
             InteractantSpeciesName, InteractantKingdom,
             FocalComments, BehaviourComments,
             SessionDayID, ProjectID, SubProjectID, ContactID,
@@ -126,7 +174,7 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
               BehaviourBegin, BehaviourEnd, BehaviourDuration, BehaviourName,
               DateOfBirth, AgeAtFocal, NameOf,
               Role, IndividualRole, InteractantRole,
-              InteractantNameOf, InteractantSex, InteractantDateOfBirth, InteractantAgeAtFocal,
+              InteractantNameOf, InteractantSex, InteractantDateOfBirth, InteractantAgeAtFocal, InteractantAgeClass,
               InteractantSpeciesName, InteractantKingdom,
               FocalComments, BehaviourComments,
               SessionDayID, ProjectID, SubProjectID, ContactID,
