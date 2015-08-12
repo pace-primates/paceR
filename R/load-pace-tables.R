@@ -114,7 +114,6 @@ get_monthly_census <- function(paceR_db, full = TRUE){
   
   census <- get_pace_tbl(paceR_db, "vCensusMonthly")
   
-  str (census)
   census <- census %>%
     mutate_each(funs(as.Date), CensusDateOf, DateOfBirth)
   

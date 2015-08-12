@@ -111,8 +111,7 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
   
   safe.ifelse <- function(cond, yes, no) structure(ifelse(cond, yes, no), class = class(yes)) 
   
-  # TO DO --> use census-query from paceR instead of pace_db
-   partnerAC <- get_monthly_census (pace_db) %>%
+   partnerAC <- get_monthly_census (paceR_db) %>%
     group_by (NameOf, CensusAgeClass, DateOfBirth, Sex) %>% 
     summarise (FirstDateAC = min (CensusDateOf),
                LastDateAC = max (CensusDateOf)) %>% 
