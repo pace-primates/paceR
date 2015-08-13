@@ -150,7 +150,7 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
   focal_SC <- focal_SC %>%
     select (linenumber, newlinenumber, PrimateSpeciesCommonName,
             SessionBegin, SessionEnd, ContactBegin, ContactEnd,
-            GroupNameLong, GroupNameCode,
+            GroupName, GroupCode,
             FocalBegin, FocalEnd, FocalDuration, FocalDurationCorrected, 
             StateBegin, StateEnd, StateDuration,
             StateVisibilityStatus, StateBehaviourName,  
@@ -166,7 +166,7 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
   # Short table
   if(!full) {
     focal_SC <- focal_SC %>%
-      select (linenumber, GroupNameCode,
+      select (linenumber, GroupCode,
               FocalBegin, FocalEnd, FocalDurationCorrected, 
               StateBegin, StateEnd, StateDuration,
               StateVisibilityStatus, StateBehaviourName,
