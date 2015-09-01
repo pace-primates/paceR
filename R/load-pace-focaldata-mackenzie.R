@@ -6,16 +6,18 @@
 #' @examples
 #' get_focaldata_MB(paceR_db)
 
-get_focaldata_MB <- function(paceR_db, full = TRUE) {
+get_focaldata_MB <- function(paceR_db, full = TRUE){
   
   focal_MB <- get_pace_tbl(paceR_db, "vFocalData", collect = FALSE) %>% 
     filter (SubProjectID == 13) %>% 
     # Only use focals with females as focals with males only test-focals
     filter (Sex == "Female") %>% 
+    # Filter out Focal with "Nymphadora Tonks" --> was focal with unknown female "Tonks" and should be corrected in pacelab
+    filter (NameOf != "Nymphadora Tonks") %>% 
     collect %>% 
-    arrange (FocalStateID, FocalBehaviourID, FocalBehaviourInteractantID) %>% # FocalBehaviourID can be used as only NA for unique FocalStateIDs
+    arrange (StateBegin, BehaviourBegin, FocalBehaviourInteractantID) %>% # BehaviourBegin can be used as only NA for unique FocalStateIDs (and therefore StateBegin)
     mutate (linenumber = row_number ()) # For controls
-  
+ 
   # not in the view:
   # Comments from tblTaxon (state, interactant), tblFocalBehaviour, tblEthogram,  
 
