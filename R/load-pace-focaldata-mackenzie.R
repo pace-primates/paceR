@@ -6,11 +6,12 @@
 #' @examples
 #' get_focaldata_MB(paceR_db)
 
-get_focaldata_MB <- function(paceR_db, full = TRUE){
+get_focaldata_MB <- function(paceR_db, full = TRUE) {
   
   focal_MB <- get_pace_tbl(paceR_db, "vFocalData", collect = FALSE) %>% 
     filter (SubProjectID == 13) %>% 
-    filter (Sex == "F") %>% 
+    # Only use focals with females as focals with males only test-focals
+    filter (Sex == "Female") %>% 
     collect %>% 
     arrange (FocalStateID, FocalBehaviourID, FocalBehaviourInteractantID) %>% # FocalBehaviourID can be used as only NA for unique FocalStateIDs
     mutate (linenumber = row_number ()) # For controls
