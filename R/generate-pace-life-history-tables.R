@@ -8,61 +8,61 @@
 #' @examples
 #' get_biography(pace_db)
 
-get_biography <- function(pace_db, full = TRUE, projectID = 1){
-
-  individuals <- get_individuals (pace_db, full = TRUE) %>%
-    select (-DayDifference, - VisionPhenotype) %>%
+get_biography <- function(paceR_db, full = TRUE, projectID = 1){
+  
+  individuals <- getv_Individual(paceR_db) %>% 
+    select (-DayDifference, -Phenotype) %>%
     filter (ProjectID %in% projectID)
-  # Missing from tblIndividual: comment, comment2, commentJFA, maybe include into full-full table
-
-  death <- get_pace_tbl(pace_db, "tblIndividualDeath") %>%
-    select (IndividualDeathID = ID, IndividualID, DateOfDeath, CauseOfDeathID, DeathSourceOfInformation = SourceOfInformation,
-            DateOfDeathFromCensus, DeathComments = Comments) %>%
+  
+  death <- get_pace_tbl(paceR_db, "vDeath") %>% 
     mutate (DateOfDeathFinal = ifelse (!is.na (DateOfDeath), DateOfDeath,
                                        ifelse (!is.na(DateOfDeathFromCensus), DateOfDeathFromCensus, NA))) %>%
     select (-DateOfDeath, - DateOfDeathFromCensus)
-
-  codeCauseOfDeath  <- get_pace_tbl (pace_db, "codeCauseOfDeath") %>%
-    select (CauseOfDeathID = ID,  CauseOfDeath)
-
-  monthlycensus <- get_monthly_census (pace_db) %>%
+  
+  monthlycensus <- getv_CensusMonthly (paceR_db) %>% 
     filter (ProjectID %in% projectID & !is.na (IndividualID))
-
+  
   lastalive <- monthlycensus %>%
     filter (Status == "Alive") %>%
     group_by (IndividualID) %>%
     arrange (CensusDateOf) %>%
     summarise (FirstAlive = first (CensusDateOf), 
-               LastAlive = last (CensusDateOf) , GroupLastAlive = last (GroupNameCode))
-
+               LastAlive = last (CensusDateOf) , GroupLastAlive = last (GroupCode))
+  
   lastcensus <-  monthlycensus %>%
     group_by (IndividualID) %>%
     arrange (desc (CensusDateOf)) %>%
     filter (row_number () == 1) %>%
-    select (IndividualID, GroupLastListed = GroupNameCode, LastCensus = CensusDateOf, LastStatus = Status)
-
+    ungroup () %>% 
+    select (IndividualID, GroupLastListed = GroupCode, LastCensus = CensusDateOf, LastStatus = Status)
+  
   censusbio <- lastalive %>%
     full_join (lastcensus, by = "IndividualID") %>%
     arrange (IndividualID)
   # mutate (diff = difftime (lastcensus, lastalive, units = "days"))
 
   biography <- death %>%
-    left_join (., codeCauseOfDeath, by = "CauseOfDeathID") %>%
     left_join (individuals, ., by = "IndividualID") %>%
     right_join (censusbio, by = "IndividualID") %>%
     mutate (DepartType = ifelse (LastStatus == "Alive", "End Of Observation", LastStatus)) %>%
     mutate (DepartDate = ifelse (!is.na (DateOfDeathFinal), as.Date (DateOfDeathFinal), as.Date (LastAlive))) %>%
     mutate (DepartDate = as.Date (DepartDate, origin = "1970-01-01")) %>% 
-    select (-IndividualDeathID, -CauseOfDeathID, -DeathSourceOfInformation,
-            -DateOfDeathFinal, -FirstAlive, -LastAlive, -LastCensus, -LastStatus) %>%
-    mutate_each (funs (as.Date), DateOfBirth, DateOfFirstSighting, DepartDate)
+  select (ProjectID, Project, PrimateSpecies, IndividualID, NameOf, Sex, DateOfBirth, BirthdateSource,
+          Mother, GroupAtBirthName, GroupAtBirthCode, DateOfFirstSighting, AgeClassAtFirstSighting,
+          GroupAtFirstSightingName, GroupAtFirstSightingCode,                
+          DepartDate, DepartType, CauseOfDeath, DeathComments, GroupLastAlive,  GroupLastListed) %>% 
+  # sorted out:  CodeName, IndividualDeathID, CauseOfDeathID, DeathSourceOfInformation
+  # DateOfDeathFinal, FirstAlive, LastAlive, LastCensus, LastStatus
+  mutate_each (funs (as.Date), DateOfBirth, DateOfFirstSighting, DepartDate)
 
   if(!full){
     biography <- biography %>%
-      select (-ProjectID, -PrimateSpecies, -CodeName, -BirthdateSource, -MatrilineID,
-              -DateOfFirstSighting, -AgeClassAtFirstSighting, -GroupAtFirstSighting, -DeathComments)
-  }
-
+      select (Project, IndividualID, NameOf, Sex, DateOfBirth, Mother, GroupAtBirthName, GroupAtBirthCode, 
+              DepartDate, DepartType, CauseOfDeath, GroupLastAlive, GroupLastListed)  
+    # sorted out: ProjectID, PrimateSpecies, BirthdateSource, DateOfFirstSighting
+    # AgeClassAtFirstSighting, GroupAtFirstSightingName, GroupAtFirstSightingCode, DeathComments
+    }
+  
   return (biography)
 
   # Following things have to be controlled:
