@@ -7,14 +7,14 @@
 getv_AlphaMaleTenure(paceR_db, full = TRUE)
 }
 \arguments{
-\item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
+\item{paceR_db}{The src_mysql connection to the PaceR Database.}
 
-\item{pace_db}{The src_mysql connection to the PACE Database.}
+\item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 }
 \description{
 Get the Alphamale-tenure table.
 }
 \examples{
-getv_AlphaMaleTenure(pace_db)
+getv_AlphaMaleTenure(paceR_db)
 }
 
