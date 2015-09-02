@@ -35,77 +35,128 @@ This package makes heavy use of the data manipulation packages [stringr](http://
   load_pace_packages()
 ```
 
-Getting Data from PACE
-----------------------
+Connecting to the PACE Database
+-------------------------------
 
 To get data from PACE, you must create an SSH tunnel. If you have set up your SSH key, you can do it like this:
 
 ``` r
 system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
-pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+```
+
+With the tunnel created, we can now connect to the database(s). The primary database is called "monkey". There is also a secondary database called "paceR" that has a variety of convenient views that are designed to be used with this package. We'll create connections to both.
+
+``` r
+  # Connect to monkey database
+  pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+  
+  # Connect to paceR database  
+  paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
 ```
 
 It should go without saying, but the above lines are just an example--if copied verbatim, they will **not** work for anyone but me (Fernando). You must first set up the SSH key and then modify these lines for your particular account.
 
-Once you get the connection worked out, you now can pull data from the database.
+Getting data from the database
+------------------------------
+
+Once you get the connection worked out, you now can pull data from the database. Whenever you download data, you must pass the name of the database connection that you're using. To do this correctly, it is crucial that you understand a major design decision that affects how the functions can be used.
+
+### Downloading raw database tables
+
+If you want to download **raw database tables**, then you should use function `get_pace_tbl()`. All tables are stored in the "monkey" database, and so when you use this function, you must pass the connection to the "monkey" database in addition to the name of the table that you want to download. For example:
 
 ``` r
-
-# Get the full individuals table
-get_individuals(pace_db)
-#> Source: local data frame [2,227 x 18]
+# Get the raw individuals table
+(i <- get_pace_tbl(pace_db, "tblIndividual"))
+#> Source: local data frame [2,228 x 20]
 #> 
-#>    ProjectID IndividualID ProjectName PrimateSpecies     NameOf CodeName
-#> 1          1            1  Santa Rosa           CCAP     2Tufts     2TUF
-#> 2          1            2  Santa Rosa           CCAP        A-1     A-1-
-#> 3          1            3  Santa Rosa           CCAP        Abu     ABU-
-#> 4          1            6  Santa Rosa           CCAP         Al     AL--
-#> 5          1            7  Santa Rosa           CCAP    Alfredo     ALFR
-#> 6          1            8  Santa Rosa           CCAP      Alien     ALIE
-#> 7          1            9  Santa Rosa           CCAP        Amy     AMY-
-#> 8          1           10  Santa Rosa           CCAP      Amy96     AM96
-#> 9          1           11  Santa Rosa           CCAP Babaganouj     BABA
-#> 10         1           12  Santa Rosa           CCAP   BabyFace     BABY
-#> ..       ...          ...         ...            ...        ...      ...
-#> Variables not shown: DateOfBirth (date), BirthdateSource (chr), Sex (chr),
-#>   Mother (chr), MatrilineID (int), GroupAtBirth (chr), GroupAtBirthCode
-#>   (chr), DateOfFirstSighting (date), DayDifference (int),
-#>   AgeClassAtFirstSighting (chr), GroupAtFirstSighting (chr),
-#>   VisionPhenotype (chr)
+#>    ID ProjectID PrimateSpeciesID     NameOf CodeName DateOfBirth
+#> 1   1         1                1     2Tufts     2TUF  1988-01-01
+#> 2   2         1                1        A-1     A-1-          NA
+#> 3   3         1                1        Abu     ABU-  2005-04-25
+#> 4   6         1                1         Al     AL--  1985-01-01
+#> 5   7         1                1    Alfredo     ALFR  1997-01-01
+#> 6   8         1                1      Alien     ALIE  1996-01-02
+#> 7   9         1                1        Amy     AMY-  1989-01-01
+#> 8  10         1                1      Amy96     AM96  1996-01-01
+#> 9  11         1                1 Babaganouj     BABA  1992-01-01
+#> 10 12         1                1   BabyFace     BABY  1991-01-01
+#> .. ..       ...              ...        ...      ...         ...
+#> Variables not shown: BirthdateSource (chr), SexID (int), MotherID (int),
+#>   MatrilineID (int), GroupAtBirthID (int), DateOfFirstSighting (chr),
+#>   DayDifference (int), AgeClassAtFirstSightingID (int),
+#>   GroupAtFirstSightingID (int), VisionPhenotypeID (int), Comments (chr),
+#>   Comments_2 (chr), CommentsJFA (chr), CommentsGenetics (chr)
 
-# Get a condensed version
-get_individuals(pace_db, full = FALSE)
-#> Source: local data frame [2,227 x 5]
-#> 
-#>    IndividualID     NameOf ProjectName DateOfBirth Sex
-#> 1             1     2Tufts  Santa Rosa         MDT   F
-#> 2             2        A-1  Santa Rosa         MDT   M
-#> 3             3        Abu  Santa Rosa         MDT   F
-#> 4             6         Al  Santa Rosa         MST   M
-#> 5             7    Alfredo  Santa Rosa         MDT   M
-#> 6             8      Alien  Santa Rosa         MST   M
-#> 7             9        Amy  Santa Rosa         MST   F
-#> 8            10      Amy96  Santa Rosa         MST   U
-#> 9            11 Babaganouj  Santa Rosa         MST   M
-#> 10           12   BabyFace  Santa Rosa         MST   M
-#> ..          ...        ...         ...         ... ...
-
-# Get any table from PACE without warning messages
-# Note that foreign key IDs aren't set!!
-get_pace_tbl(pace_db, "tblIndividualDeath")
+# Get the raw deaths table
+(d <- get_pace_tbl(pace_db, "tblIndividualDeath"))
 #> Source: local data frame [1,055 x 7]
 #> 
 #>    ID IndividualID DateOfDeath CauseOfDeathID SourceOfInformation
-#> 1   1            1  1997-03-15              5                  NA
-#> 2   2            2  2004-02-13              5                  NA
-#> 3   3            6  1997-02-28              5                  NA
-#> 4   4            8  2004-02-20              5                  NA
-#> 5   5            9  1997-02-24              5                  NA
-#> 6   6           10  1997-01-28              5                  NA
-#> 7   7           12  1997-03-15              5                  NA
-#> 8   8           15  2000-05-23              5                  NA
-#> 9   9           16  1997-03-15              5                  NA
-#> 10 10           17  1989-04-18              5                  NA
+#> 1   0         7152  1984-05-29            157            DODKnown
+#> 2   1            1  1997-03-15              5                  NA
+#> 3   2            2  2004-02-13              5                  NA
+#> 4   3            6  1997-02-28              5                  NA
+#> 5   4            8  2004-02-20              5                  NA
+#> 6   5            9  1997-02-24              5                  NA
+#> 7   6           10  1997-01-28              5                  NA
+#> 8   7           12  1997-03-15              5                  NA
+#> 9   8           15  2000-05-23              5                  NA
+#> 10  9           16  1997-03-15              5                  NA
 #> .. ..          ...         ...            ...                 ...
 #> Variables not shown: DateOfDeathFromCensus (chr), Comments (chr)
+```
+
+Note that the "foreign keys" (i.e., the columns that end with "ID") are just uninformative numbers! To make use of the data, you might need to join table by their ID relevant fields.
+
+``` r
+# Join the individuals and deaths tables
+id <- left_join(i, d, by = c("ID" = "IndividualID"))
+```
+
+You can see that there are many more ID fields that would need to be joined. It can very inconvenient to work with the data this way!
+
+### Downloading data using saved views
+
+A much better option is to download data using the convenient saved "views". These are stored in the paceR database, and they should be called using the functions that begin with `getv_`
+
+``` r
+# Get a Individuals data
+(i2 <- getv_Individual(paceR_db))
+#> Source: local data frame [2,228 x 18]
+#> 
+#>    IndividualID Project PrimateSpecies     NameOf CodeName DateOfBirth
+#> 1             1      SR           CCAP     2Tufts     2TUF  1988-01-01
+#> 2             2      SR           CCAP        A-1     A-1-        <NA>
+#> 3             3      SR           CCAP        Abu     ABU-  2005-04-25
+#> 4             6      SR           CCAP         Al     AL--  1985-01-01
+#> 5             7      SR           CCAP    Alfredo     ALFR  1997-01-01
+#> 6             8      SR           CCAP      Alien     ALIE  1996-01-02
+#> 7             9      SR           CCAP        Amy     AMY-  1989-01-01
+#> 8            10      SR           CCAP      Amy96     AM96  1996-01-01
+#> 9            11      SR           CCAP Babaganouj     BABA  1992-01-01
+#> 10           12      SR           CCAP   BabyFace     BABY  1991-01-01
+#> ..          ...     ...            ...        ...      ...         ...
+#> Variables not shown: Sex (chr), BirthdateSource (chr), Mother (chr),
+#>   GroupAtBirthName (chr), GroupAtBirthCode (chr), DateOfFirstSighting
+#>   (date), DayDifference (int), AgeClassAtFirstSighting (chr),
+#>   GroupAtFirstSightingName (chr), GroupAtFirstSightingCode (chr),
+#>   Phenotype (chr), ProjectID (int)
+
+# Get a condensed version
+(i2 <- getv_Individual(paceR_db, full = FALSE))
+#> Source: local data frame [2,228 x 5]
+#> 
+#>    IndividualID     NameOf Project DateOfBirth     Sex
+#> 1             1     2Tufts      SR  1988-01-01  Female
+#> 2             2        A-1      SR        <NA>    Male
+#> 3             3        Abu      SR  2005-04-25  Female
+#> 4             6         Al      SR  1985-01-01    Male
+#> 5             7    Alfredo      SR  1997-01-01    Male
+#> 6             8      Alien      SR  1996-01-02    Male
+#> 7             9        Amy      SR  1989-01-01  Female
+#> 8            10      Amy96      SR  1996-01-01 Unknown
+#> 9            11 Babaganouj      SR  1992-01-01    Male
+#> 10           12   BabyFace      SR  1991-01-01    Male
+#> ..          ...        ...     ...         ...     ...
 ```
