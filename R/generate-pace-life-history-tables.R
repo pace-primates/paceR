@@ -98,10 +98,6 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     select (-DayDifference, - Phenotype) %>% 
     filter (ProjectID %in% projectID)
   
-  tblGroup  <- get_pace_tbl (pace_db, "tblGroup") %>%
-    select (GroupID = ID, GroupCode = NameCode)
-  
-  
   infant_biography <- get_biography (paceR_db) %>%
     filter (!is.na(DateOfBirth)) %>% 
     filter (GroupAtBirthCode %in% c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")) %>%
@@ -118,23 +114,22 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     filter (GroupCode %in% c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")) %>%
     mutate_each (funs (as.Date), AMT_DateStart, AMT_DateEnd, AlphaMaleDOB) %>% 
     # CP fissioned into CPAD and CPRM on 2013-01-01 -> query takes into account if alpha in new groups is the same as before fission
-    mutate (lastmale_CP_DateEnd = last (.[.$Group == "CP",][["AMT_DateEnd"]])) %>% 
-    mutate (lastmale_CP = .[.$Group == "CP" & .$AMT_DateEnd == .$lastmale_CP_DateEnd,][["AlphaMale"]]) %>%
-    mutate (firstmale_CPxx_DateStart = first (.[.$Group == "CPAD",][["AMT_DateStart"]])) %>% 
-    group_by(Group) %>% 
-    mutate(PreviousAM = ifelse (Group %in% c("CPAD", "CPRM") & is.na (lag(AlphaMale)), lastmale_CP, lag (AlphaMale)),
-           PreviousAMT_DateEnd = ifelse (Group %in% c("CPAD", "CPRM") & is.na (lag(AlphaMale)),
+    mutate (lastmale_CP_DateEnd = last (.[.$GroupCode == "CP",][["AMT_DateEnd"]])) %>% 
+    mutate (lastmale_CP = .[.$GroupCode == "CP" & .$AMT_DateEnd == .$lastmale_CP_DateEnd,][["AlphaMale"]]) %>%
+    mutate (firstmale_CPxx_DateStart = first (.[.$GroupCode == "CPAD",][["AMT_DateStart"]])) %>% 
+    group_by(GroupCode) %>% 
+    mutate(PreviousAM = ifelse (GroupCode %in% c("CPAD", "CPRM") & is.na (lag(AlphaMale)), lastmale_CP, lag (AlphaMale)),
+           PreviousAMT_DateEnd = ifelse (GroupCode %in% c("CPAD", "CPRM") & is.na (lag(AlphaMale)),
                                          lastmale_CP_DateEnd, lag (AMT_DateEnd)),
            PreviousAMT_DateEnd = as.Date (PreviousAMT_DateEnd, origin = "1970-01-01"),
-           NextAM = ifelse (Group == "CP" & AlphaMale == "Legolas", "Legolas and Buzz (fission)", lead (AlphaMale)),
-           NextAMT_DateStart = ifelse (Group == "CP" & AlphaMale == "Legolas", firstmale_CPxx_DateStart,
+           NextAM = ifelse (GroupCode == "CP" & AlphaMale == "Legolas", "Legolas and Buzz (fission)", lead (AlphaMale)),
+           NextAMT_DateStart = ifelse (GroupCode == "CP" & AlphaMale == "Legolas", firstmale_CPxx_DateStart,
                                        lead(AMT_DateStart)),
            NextAMT_DateStart = as.Date (NextAMT_DateStart, origin = "1970-01-01"),
            AlphaGap = difftime (AMT_DateStart, PreviousAMT_DateEnd, units = "days")) %>%
     ungroup %>%
     rename (AM_ID = AlphaMaleID, AM = AlphaMale, AM_DOB = AlphaMaleDOB, AMT_ID = AlphaMaleTenureID) %>% 
     select (-lastmale_CP_DateEnd, -lastmale_CP)
-  
   
   # A birthday within 165 days (5.5 months) after a new male alpha male was established is risky --> Alpha male replacement (AMR)
   # A birthday within 364.25 days before tenure end of an alpha male is risky --> Alpha male replacement (AMR)
@@ -143,7 +138,7 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
   
   tenurestart_risk <- amt %>%
     mutate (TSR = ifelse (is.na(PreviousAM), "GS_unknown",
-                          ifelse (Group == "CPRM" & AM == "Legolas", "GS", # He also was the alpha male before the fission
+                          ifelse (GroupCode == "CPRM" & AM == "Legolas", "GS", # He also was the alpha male before the fission
                                   ifelse (AlphaGap > 365, "GS_unknown", "AMR"))),
             # If no previous alpha or gap longer than 365 days (i.e. GS_unknown) --> Start = AMT_Start
             # Otherwise include the gap (i.e. use TenureEnd of previous alpha)
@@ -155,7 +150,7 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     filter (TSR != "GS") %>% #Only use AMR and GS_unknown
     rename (TSR_AMT_ID = AMT_ID) %>% 
     group_by (TSR_AMT_ID) %>%
-    do (data.frame(Group = .$Group,
+    do (data.frame(GroupCode = .$GroupCode,
                    TSR_AM = .$AM,
                    TSR = .$TSR,
                    TSR_AMT_DateStart = .$AMT_DateStart,
@@ -164,19 +159,19 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
                    RiskDate = seq (as.Date (.$TSR_Start),
                                    as.Date (.$TSR_End), by = 'day'))) %>% 
     ungroup %>% 
-    distinct (Group, RiskDate, TSR) %>% 
+    distinct (GroupCode, RiskDate, TSR) %>% 
     # RiskDate has to be transformed as otherwise the joining doesn't work
     mutate (RiskDate = as.character(RiskDate))
-  
-  tenureend_risk <- amt %>% 
-    mutate (TER = ifelse (is.na (NextAM), "Censored", "AMR"),
+
+   tenureend_risk <- amt %>%
+     mutate (TER = ifelse (is.na (NextAM), "Censored", "AMR"),
             TER_Start = as.Date (AMT_DateEnd) - 364.25,
             TER_End = AMT_DateEnd) %>%
     ungroup %>% 
     filter (!(TER %in% c("Censored"))) %>% # Only use AMR
     rename (TER_AMT_ID = AMT_ID) %>% 
     group_by (TER_AMT_ID) %>%
-    do (data.frame(Group = .$Group,
+    do (data.frame(GroupCode = .$GroupCode,
                    TER_AM = .$AM,
                    TER_NextAM = .$NextAM,
                    TER_NextAMT_DateStart = .$NextAMT_DateStart,
@@ -185,7 +180,7 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
                    RiskDate = seq (as.Date (.$TER_Start),
                                    as.Date (.$TER_End), by = 'day'))) %>%
     ungroup %>% 
-    distinct (Group, RiskDate) %>% 
+    distinct (GroupCode, RiskDate) %>% 
     # RiskDate has to be transformed as otherwise the joining doesn't work
     mutate (RiskDate = as.character(RiskDate))
   
@@ -194,7 +189,7 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
   # Build in control that always AMR is chosen and GS_unknown removed?
   
   birthrisk <- tenurestart_risk %>% 
-    full_join (tenureend_risk, by = c("Group", "RiskDate")) %>% 
+    full_join (tenureend_risk, by = c("GroupCode", "RiskDate")) %>% 
     mutate (New_AM = ifelse (!is.na (TSR_AM), TSR_AM, TER_NextAM),
             New_AMT_Start = ifelse (!is.na (TSR_AMT_DateStart), TSR_AMT_DateStart, TER_NextAMT_DateStart),
             Old_AM = ifelse (!is.na (TSR_PreviousAM), TSR_PreviousAM, TER_AM),
@@ -203,22 +198,22 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
             BirthRisk = ifelse (!is.na (TER), as.character(TER), as.character(TSR)),
             InfanticideRisk_Start = ifelse (BirthRisk == "GS_unknown", New_AMT_Start, Old_AMT_End)) %>% 
     mutate_each (funs (as.Date (., origin = "1970-01-01")), New_AMT_Start, Old_AMT_End, InfanticideRisk_Start) %>% 
-    arrange (Group, RiskDate) %>% 
-    select (Group, RiskDate, BirthRisk, InfanticideRisk_Start, New_AM, New_AMT_Start, Old_AM, Old_AMT_End)
+    arrange (GroupCode, RiskDate) %>% 
+    select (GroupCode, RiskDate, BirthRisk, InfanticideRisk_Start, New_AM, New_AMT_Start, Old_AM, Old_AMT_End)
   
   # Determine in which groups infants went after fission of CP
-  group_after_CP_fission <- get_monthly_census(pace_db) %>%   
-    filter (grepl ("CP", GroupNameCode)) %>% 
+  group_after_CP_fission <- getv_CensusMonthly(paceR_db) %>%   
+    filter (grepl ("CP", GroupCode)) %>% 
     filter (DateOfBirth >= as.Date("2012-01-01") & DateOfBirth < as.Date("2013-01-31")) %>% 
     filter (CensusDateOf > as.Date("2013-01-31") & CensusDateOf < as.Date("2013-06-30")) %>% 
-    distinct (NameOf, GroupNameCode) %>% 
-    select (InfantName = NameOf, GroupDuringInfanticideRisk = GroupNameCode)
+    distinct (NameOf, GroupCode) %>% 
+    select (InfantName = NameOf, GroupDuringInfanticideRisk = GroupCode)
   
   # Check which infants 1) were born at a risky time and
   # 2) were still presents when the infanticide risk was present (i.e. the tenure of the previous alpha ended)
   # For CP, determine next Alpha and Risk depending on the group they went after the fission
   infanticide_risk <- infant_biography %>% 
-    left_join (birthrisk, by = c("InfantGroupAtBirthCode" = "Group", "InfantDOB" = "RiskDate")) %>%
+    left_join (birthrisk, by = c("InfantGroupAtBirthCode" = "GroupCode", "InfantDOB" = "RiskDate")) %>%
     # Infants that departed before the infanticide risk was real need to be sorted out
     mutate (InfanticideRisk = ifelse (InfanticideRisk_Start < InfantDepartDate, BirthRisk, "GS")) %>% 
     mutate (InfanticideRisk = ifelse (!is.na (InfanticideRisk), InfanticideRisk, "GS")) %>% 
@@ -231,20 +226,15 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     mutate (InfanticideRisk = ifelse (New_AM == "Legolas" & Old_AM == "Legolas", "GS", InfanticideRisk)) %>% 
     mutate (InfanticideRisk = ifelse (!is.na (InfanticideRisk), InfanticideRisk, "GS")) %>% 
     select (-BirthRisk, -InfanticideRisk_Start) %>% 
-    select (InfantID, InfantName, InfantSex, Mother, InfantDateOfConception, InfantDOB, InfantGroupAtBirth, InfantGroupAtBirthCode,
+    select (InfantID, InfantName, InfantSex, Mother, InfantDateOfConception, InfantDOB, InfantGroupAtBirthName, InfantGroupAtBirthCode,
             InfantDepartDate, AgeAtDepart, Survived1Y, InfanticideRisk, GroupDuringInfanticideRisk, New_AM, New_AMT_Start, Old_AM, Old_AMT_End,
             InfantDepartType, InfantCauseOfDeath, InfantDepartComments)
-  
+
   # Short version of table
   if(!full){
     infanticide_risk <- infanticide_risk %>%
-      select (-InfantSex, -Mother, -InfantDateOfConception, -InfantGroupAtBirth, -Old_AM, -Old_AMT_End)
+      select (-InfantSex, -Mother, -InfantDateOfConception, -InfantGroupAtBirthCode, -Old_AM, -Old_AMT_End)
   }
   
   return (infanticide_risk)
 }
-
-
-
-
-
