@@ -66,18 +66,12 @@ system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 
 With the tunnel created, we can now connect to the database(s). The primary database is called "monkey". There is also a secondary database called "paceR" that has a variety of convenient views that are designed to be used with this package. We'll create connections to both.
 
-```{r, eval = FALSE}
+```{r}
   # Connect to monkey database
   pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
   
   # Connect to paceR database  
   paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
-```
-
-
-```{r, echo = FALSE}
-pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
-paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
 ```
 
 It should go without saying, but the above lines are just an example--if copied verbatim, they will **not** work for anyone but me (Fernando). You must first set up the SSH key and then modify these lines for your particular account.
@@ -86,6 +80,20 @@ It should go without saying, but the above lines are just an example--if copied 
 ## Getting data from the database
 
 Once you get the connection worked out, you now can pull data from the database. Whenever you download data, you must pass the name of the database connection that you're using. To do this correctly, it is crucial that you understand a major design decision that affects how the functions can be used.
+
+
+### Downloading data using saved views (RECOMMENDED METHOD!)
+
+The best way to get data from the database is to use the convenient saved "views". These are stored in the paceR database, and they should be called using the functions that begin with `getv_`
+
+```{r}
+# Get a Individuals data
+(i2 <- getv_Individual(paceR_db))
+
+# Get a condensed version
+(i2 <- getv_Individual(paceR_db, full = FALSE))
+```
+
 
 ### Downloading raw database tables (NOT RECOMMENDED!)
 
@@ -108,18 +116,6 @@ id <- left_join(i, d, by = c("ID" = "IndividualID"))
 
 You can see that there are many more ID fields that would need to be joined. It can very inconvenient to work with the data this way!
 
-
-### Downloading data using saved views (RECOMMENDED METHOD!)
-
-A much better option is to download data using the convenient saved "views". These are stored in the paceR database, and they should be called using the functions that begin with `getv_`
-
-```{r}
-# Get a Individuals data
-(i2 <- getv_Individual(paceR_db))
-
-# Get a condensed version
-(i2 <- getv_Individual(paceR_db, full = FALSE))
-```
 
 
 

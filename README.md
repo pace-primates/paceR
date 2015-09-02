@@ -61,6 +61,51 @@ Getting data from the database
 
 Once you get the connection worked out, you now can pull data from the database. Whenever you download data, you must pass the name of the database connection that you're using. To do this correctly, it is crucial that you understand a major design decision that affects how the functions can be used.
 
+### Downloading data using saved views (RECOMMENDED METHOD!)
+
+The best way to get data from the database is to use the convenient saved "views". These are stored in the paceR database, and they should be called using the functions that begin with `getv_`
+
+``` r
+# Get a Individuals data
+(i2 <- getv_Individual(paceR_db))
+#> Source: local data frame [2,228 x 18]
+#> 
+#>    IndividualID Project PrimateSpecies     NameOf CodeName DateOfBirth
+#> 1             1      SR           CCAP     2Tufts     2TUF  1988-01-01
+#> 2             2      SR           CCAP        A-1     A-1-        <NA>
+#> 3             3      SR           CCAP        Abu     ABU-  2005-04-25
+#> 4             6      SR           CCAP         Al     AL--  1985-01-01
+#> 5             7      SR           CCAP    Alfredo     ALFR  1997-01-01
+#> 6             8      SR           CCAP      Alien     ALIE  1996-01-02
+#> 7             9      SR           CCAP        Amy     AMY-  1989-01-01
+#> 8            10      SR           CCAP      Amy96     AM96  1996-01-01
+#> 9            11      SR           CCAP Babaganouj     BABA  1992-01-01
+#> 10           12      SR           CCAP   BabyFace     BABY  1991-01-01
+#> ..          ...     ...            ...        ...      ...         ...
+#> Variables not shown: Sex (chr), BirthdateSource (chr), Mother (chr),
+#>   GroupAtBirthName (chr), GroupAtBirthCode (chr), DateOfFirstSighting
+#>   (date), DayDifference (int), AgeClassAtFirstSighting (chr),
+#>   GroupAtFirstSightingName (chr), GroupAtFirstSightingCode (chr),
+#>   Phenotype (chr), ProjectID (int)
+
+# Get a condensed version
+(i2 <- getv_Individual(paceR_db, full = FALSE))
+#> Source: local data frame [2,228 x 5]
+#> 
+#>    IndividualID     NameOf Project DateOfBirth     Sex
+#> 1             1     2Tufts      SR  1988-01-01  Female
+#> 2             2        A-1      SR        <NA>    Male
+#> 3             3        Abu      SR  2005-04-25  Female
+#> 4             6         Al      SR  1985-01-01    Male
+#> 5             7    Alfredo      SR  1997-01-01    Male
+#> 6             8      Alien      SR  1996-01-02    Male
+#> 7             9        Amy      SR  1989-01-01  Female
+#> 8            10      Amy96      SR  1996-01-01 Unknown
+#> 9            11 Babaganouj      SR  1992-01-01    Male
+#> 10           12   BabyFace      SR  1991-01-01    Male
+#> ..          ...        ...     ...         ...     ...
+```
+
 ### Downloading raw database tables (NOT RECOMMENDED!)
 
 If you want to download **raw database tables**, then you should use function `get_pace_tbl()`. All tables are stored in the "monkey" database, and so when you use this function, you must pass the connection to the "monkey" database in addition to the name of the table that you want to download. For example:
@@ -115,48 +160,3 @@ id <- left_join(i, d, by = c("ID" = "IndividualID"))
 ```
 
 You can see that there are many more ID fields that would need to be joined. It can very inconvenient to work with the data this way!
-
-### Downloading data using saved views (RECOMMENDED METHOD!)
-
-A much better option is to download data using the convenient saved "views". These are stored in the paceR database, and they should be called using the functions that begin with `getv_`
-
-``` r
-# Get a Individuals data
-(i2 <- getv_Individual(paceR_db))
-#> Source: local data frame [2,228 x 18]
-#> 
-#>    IndividualID Project PrimateSpecies     NameOf CodeName DateOfBirth
-#> 1             1      SR           CCAP     2Tufts     2TUF  1988-01-01
-#> 2             2      SR           CCAP        A-1     A-1-        <NA>
-#> 3             3      SR           CCAP        Abu     ABU-  2005-04-25
-#> 4             6      SR           CCAP         Al     AL--  1985-01-01
-#> 5             7      SR           CCAP    Alfredo     ALFR  1997-01-01
-#> 6             8      SR           CCAP      Alien     ALIE  1996-01-02
-#> 7             9      SR           CCAP        Amy     AMY-  1989-01-01
-#> 8            10      SR           CCAP      Amy96     AM96  1996-01-01
-#> 9            11      SR           CCAP Babaganouj     BABA  1992-01-01
-#> 10           12      SR           CCAP   BabyFace     BABY  1991-01-01
-#> ..          ...     ...            ...        ...      ...         ...
-#> Variables not shown: Sex (chr), BirthdateSource (chr), Mother (chr),
-#>   GroupAtBirthName (chr), GroupAtBirthCode (chr), DateOfFirstSighting
-#>   (date), DayDifference (int), AgeClassAtFirstSighting (chr),
-#>   GroupAtFirstSightingName (chr), GroupAtFirstSightingCode (chr),
-#>   Phenotype (chr), ProjectID (int)
-
-# Get a condensed version
-(i2 <- getv_Individual(paceR_db, full = FALSE))
-#> Source: local data frame [2,228 x 5]
-#> 
-#>    IndividualID     NameOf Project DateOfBirth     Sex
-#> 1             1     2Tufts      SR  1988-01-01  Female
-#> 2             2        A-1      SR        <NA>    Male
-#> 3             3        Abu      SR  2005-04-25  Female
-#> 4             6         Al      SR  1985-01-01    Male
-#> 5             7    Alfredo      SR  1997-01-01    Male
-#> 6             8      Alien      SR  1996-01-02    Male
-#> 7             9        Amy      SR  1989-01-01  Female
-#> 8            10      Amy96      SR  1996-01-01 Unknown
-#> 9            11 Babaganouj      SR  1992-01-01    Male
-#> 10           12   BabyFace      SR  1991-01-01    Male
-#> ..          ...        ...     ...         ...     ...
-```
