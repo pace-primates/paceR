@@ -108,7 +108,11 @@ The best way to get data from the database is to use the convenient saved "views
 #> ..          ...        ...     ...         ...     ...
 ```
 
-Currently, there following functions are availabls: - `getv_CensusMonthly()` - `getv_Individual()` - `getv_Phenology()`
+Currently, there following functions are available:
+
+-   `getv_CensusMonthly()`
+-   `getv_Individual()`
+-   `getv_Phenology()`
 
 ### Downloading raw database tables (NOT RECOMMENDED!)
 
