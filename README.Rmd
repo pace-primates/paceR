@@ -94,6 +94,11 @@ The best way to get data from the database is to use the convenient saved "views
 (i2 <- getv_Individual(paceR_db, full = FALSE))
 ```
 
+Currently, there following functions are availabls:
+- `getv_CensusMonthly()`
+- `getv_Individual()`
+- `getv_Phenology()`
+
 
 ### Downloading raw database tables (NOT RECOMMENDED!)
 
@@ -117,6 +122,6 @@ id <- left_join(i, d, by = c("ID" = "IndividualID"))
 You can see that there are many more ID fields that would need to be joined. It can very inconvenient to work with the data this way!
 
 
+## Tutorials for specific kinds of data
 
-
-
+[Phenology](Phenology.md)

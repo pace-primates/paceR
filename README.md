@@ -71,6 +71,7 @@ The best way to get data from the database is to use the convenient saved "views
 #> Source: local data frame [2,228 x 18]
 #> 
 #>    IndividualID Project PrimateSpecies     NameOf CodeName DateOfBirth
+#>           (int)   (chr)          (chr)      (chr)    (chr)      (date)
 #> 1             1      SR           CCAP     2Tufts     2TUF  1988-01-01
 #> 2             2      SR           CCAP        A-1     A-1-        <NA>
 #> 3             3      SR           CCAP        Abu     ABU-  2005-04-25
@@ -93,6 +94,7 @@ The best way to get data from the database is to use the convenient saved "views
 #> Source: local data frame [2,228 x 5]
 #> 
 #>    IndividualID     NameOf Project DateOfBirth     Sex
+#>           (int)      (chr)   (chr)      (date)   (chr)
 #> 1             1     2Tufts      SR  1988-01-01  Female
 #> 2             2        A-1      SR        <NA>    Male
 #> 3             3        Abu      SR  2005-04-25  Female
@@ -106,6 +108,8 @@ The best way to get data from the database is to use the convenient saved "views
 #> ..          ...        ...     ...         ...     ...
 ```
 
+Currently, there following functions are availabls: - `getv_CensusMonthly()` - `getv_Individual()` - `getv_Phenology()`
+
 ### Downloading raw database tables (NOT RECOMMENDED!)
 
 If you want to download **raw database tables**, then you should use function `get_pace_tbl()`. All tables are stored in the `monkey` database, and so when you use this function, you must pass the connection to the `monkey` database in addition to the name of the table that you want to download. For example:
@@ -115,18 +119,19 @@ If you want to download **raw database tables**, then you should use function `g
 (i <- get_pace_tbl(pace_db, "tblIndividual"))
 #> Source: local data frame [2,228 x 20]
 #> 
-#>    ID ProjectID PrimateSpeciesID     NameOf CodeName DateOfBirth
-#> 1   1         1                1     2Tufts     2TUF  1988-01-01
-#> 2   2         1                1        A-1     A-1-          NA
-#> 3   3         1                1        Abu     ABU-  2005-04-25
-#> 4   6         1                1         Al     AL--  1985-01-01
-#> 5   7         1                1    Alfredo     ALFR  1997-01-01
-#> 6   8         1                1      Alien     ALIE  1996-01-02
-#> 7   9         1                1        Amy     AMY-  1989-01-01
-#> 8  10         1                1      Amy96     AM96  1996-01-01
-#> 9  11         1                1 Babaganouj     BABA  1992-01-01
-#> 10 12         1                1   BabyFace     BABY  1991-01-01
-#> .. ..       ...              ...        ...      ...         ...
+#>       ID ProjectID PrimateSpeciesID     NameOf CodeName DateOfBirth
+#>    (int)     (int)            (int)      (chr)    (chr)       (chr)
+#> 1      1         1                1     2Tufts     2TUF  1988-01-01
+#> 2      2         1                1        A-1     A-1-          NA
+#> 3      3         1                1        Abu     ABU-  2005-04-25
+#> 4      6         1                1         Al     AL--  1985-01-01
+#> 5      7         1                1    Alfredo     ALFR  1997-01-01
+#> 6      8         1                1      Alien     ALIE  1996-01-02
+#> 7      9         1                1        Amy     AMY-  1989-01-01
+#> 8     10         1                1      Amy96     AM96  1996-01-01
+#> 9     11         1                1 Babaganouj     BABA  1992-01-01
+#> 10    12         1                1   BabyFace     BABY  1991-01-01
+#> ..   ...       ...              ...        ...      ...         ...
 #> Variables not shown: BirthdateSource (chr), SexID (int), MotherID (int),
 #>   MatrilineID (int), GroupAtBirthID (int), DateOfFirstSighting (chr),
 #>   DayDifference (int), AgeClassAtFirstSightingID (int),
@@ -137,18 +142,19 @@ If you want to download **raw database tables**, then you should use function `g
 (d <- get_pace_tbl(pace_db, "tblIndividualDeath"))
 #> Source: local data frame [1,055 x 7]
 #> 
-#>    ID IndividualID DateOfDeath CauseOfDeathID SourceOfInformation
-#> 1   0         7152  1984-05-29            157            DODKnown
-#> 2   1            1  1997-03-15              5                  NA
-#> 3   2            2  2004-02-13              5                  NA
-#> 4   3            6  1997-02-28              5                  NA
-#> 5   4            8  2004-02-20              5                  NA
-#> 6   5            9  1997-02-24              5                  NA
-#> 7   6           10  1997-01-28              5                  NA
-#> 8   7           12  1997-03-15              5                  NA
-#> 9   8           15  2000-05-23              5                  NA
-#> 10  9           16  1997-03-15              5                  NA
-#> .. ..          ...         ...            ...                 ...
+#>       ID IndividualID DateOfDeath CauseOfDeathID SourceOfInformation
+#>    (int)        (int)       (chr)          (int)               (chr)
+#> 1      0         7152  1984-05-29            157            DODKnown
+#> 2      1            1  1997-03-15              5                  NA
+#> 3      2            2  2004-02-13              5                  NA
+#> 4      3            6  1997-02-28              5                  NA
+#> 5      4            8  2004-02-20              5                  NA
+#> 6      5            9  1997-02-24              5                  NA
+#> 7      6           10  1997-01-28              5                  NA
+#> 8      7           12  1997-03-15              5                  NA
+#> 9      8           15  2000-05-23              5                  NA
+#> 10     9           16  1997-03-15              5                  NA
+#> ..   ...          ...         ...            ...                 ...
 #> Variables not shown: DateOfDeathFromCensus (chr), Comments (chr)
 ```
 
@@ -160,3 +166,8 @@ id <- left_join(i, d, by = c("ID" = "IndividualID"))
 ```
 
 You can see that there are many more ID fields that would need to be joined. It can very inconvenient to work with the data this way!
+
+Tutorials for specific kinds of data
+------------------------------------
+
+[Phenology](Phenology.md)
