@@ -4,14 +4,14 @@
 \alias{get_biography}
 \title{Get table with biography from birth until death, disappearance or end of observation of individuals.}
 \usage{
-get_biography(pace_db, full = TRUE, projectID = 1)
+get_biography(paceR_db, full = TRUE, projectID = 1)
 }
 \arguments{
-\item{pace_db}{The src_mysql connection to the PACE Database.}
-
 \item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 
 \item{projectID}{Option to get data only from specific project (1-7?). Default is 1 (Santa Rosa)}
+
+\item{pace_db}{The src_mysql connection to the PACE Database.}
 }
 \description{
 Get table with biography from birth until death, disappearance or end of observation of individuals.
