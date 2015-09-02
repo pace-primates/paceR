@@ -1,0 +1,77 @@
+---
+title: "Phenology"
+author: "Fernando Campos"
+date: "`r Sys.Date()`"
+output:
+  md_document:
+    variant: markdown_github
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "PHENO-"
+)
+```
+
+# Obtaining and analyzing phenology data
+
+```{r, message = FALSE, warning = FALSE}
+library(paceR)
+load_pace_packages()
+```
+
+I assume that you have already [set up the connections to the database](README.md)
+
+```{r, echo = FALSE}
+  # Connect to monkey database
+  pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+  
+  # Connect to paceR database  
+  paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
+  
+  options(dplyr.width = Inf)
+```
+
+## Santa Rosa Phenlology Data
+
+First get Santa Rosa phenology data from the database using the saved View.
+
+```{r}
+ph <- getv_Phenology(paceR_db)
+  
+# Filter to obtain Santa Rosa data only
+ph <- ph %>% filter(Project == "SR")
+```
+
+Fortunately, Santa Rosa doesn't mix categorical scores, percents, and counts. Therefore, we can drop the percents and counts (which aren't used) and focus only on the scores.
+
+```{r}
+# Remove unnecessary columns
+ph <- ph %>% select(-PhenologyPercent, -PhenologyCount, -ScientificName, -RecordDate)
+
+# Let's look at the data
+ph
+```
+
+The data are stored in "long" format in the database, where each distinct measurement is a row. If you want to see them in a "wide" format, where all measurements for a given tree/session are in one row (like the spreadsheet in which they are collected), we can reshape it like so:
+
+```{r}
+# First unite the "FoodPart" and "Measurement" columns
+ph_wide <- ph %>% unite(FoodPartMeasurement, c(FoodPart, Measurement))
+
+# Now spread PhenologyScore using FoodPartMeasurement as the key
+ph_wide <- ph_wide %>% spread(FoodPartMeasurement, PhenologyScore)
+
+# Do a bit of column rearranging
+ph_wide <- ph_wide %>% select(1:6, 9:15, ResearcherName, Comments)
+
+# Look at data
+ph_wide
+```
+
