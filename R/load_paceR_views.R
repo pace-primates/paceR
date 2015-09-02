@@ -72,3 +72,29 @@ getv_Phenology <- function(paceR_db, full = TRUE){
 
   return(p)
 }
+
+#' Get the Alphamale-tenure table.
+#'
+#' @param paceR_db The src_mysql connection to the PaceR Database.
+#' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
+#'
+#' @export
+#' @examples
+#' getv_AlphaMaleTenure(paceR_db)
+
+getv_AlphaMaleTenure <- function(paceR_db, full = TRUE){
+  
+  alpha_tenures <- get_pace_tbl(paceR_db, "vAlphaMaleTenure") %>%
+    arrange(GroupCode, AMT_DateStart) %>%
+    select(GroupCode, GroupName, AMT_DateStart, AMT_DateEnd,
+           AlphaMaleID, AlphaMale, AlphaMaleDOB,
+           AMT_Comments, AlphaMaleTenureID) %>%
+    mutate_each(funs(as.Date), contains("Date"), AlphaMaleDOB)
+  
+  if (!full){
+    alpha_tenures <- alpha_tenures %>%
+      select(GroupCode, AMT_DateStart, AMT_DateEnd, AlphaMale)
+    # sorted out: GroupName, AlphaMaleID, AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID
+  }
+  return(alpha_tenures)
+}
