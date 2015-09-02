@@ -61,7 +61,7 @@ Getting data from the database
 
 Once you get the connection worked out, you now can pull data from the database. Whenever you download data, you must pass the name of the database connection that you're using. To do this correctly, it is crucial that you understand a major design decision that affects how the functions can be used.
 
-### Downloading raw database tables
+### Downloading raw database tables (NOT RECOMMENDED!)
 
 If you want to download **raw database tables**, then you should use function `get_pace_tbl()`. All tables are stored in the "monkey" database, and so when you use this function, you must pass the connection to the "monkey" database in addition to the name of the table that you want to download. For example:
 
@@ -116,7 +116,7 @@ id <- left_join(i, d, by = c("ID" = "IndividualID"))
 
 You can see that there are many more ID fields that would need to be joined. It can very inconvenient to work with the data this way!
 
-### Downloading data using saved views
+### Downloading data using saved views (RECOMMENDED METHOD!)
 
 A much better option is to download data using the convenient saved "views". These are stored in the paceR database, and they should be called using the functions that begin with `getv_`
 
