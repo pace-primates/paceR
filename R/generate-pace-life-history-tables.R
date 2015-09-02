@@ -75,6 +75,7 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 
 }
 
+
 #' Get table with risk of infanticide for infants
 #' as a consequence of alpha male reversals
 #'
@@ -93,14 +94,15 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 
 get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
   
-  individuals <- get_individuals (pace_db, full = TRUE) %>% 
-    select (-DayDifference, - VisionPhenotype) %>% 
+  individuals <- getv_Individual (paceR_db) %>% 
+    select (-DayDifference, - Phenotype) %>% 
     filter (ProjectID %in% projectID)
   
   tblGroup  <- get_pace_tbl (pace_db, "tblGroup") %>%
     select (GroupID = ID, GroupCode = NameCode)
   
-  infant_biography <- get_biography (pace_db) %>%
+  
+  infant_biography <- get_biography (paceR_db) %>%
     filter (!is.na(DateOfBirth)) %>% 
     filter (GroupAtBirthCode %in% c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")) %>%
     mutate (InfantDateOfConception = as.Date (DateOfBirth) - 160) %>%
@@ -108,12 +110,12 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     mutate (Survived1Y = ifelse (AgeAtDepart > 1, "Yes",
                                  ifelse (DepartType == "End Of Observation", "<1year at end of observation",  "No"))) %>%
     select (InfantID = IndividualID, InfantName = NameOf, Mother, InfantDateOfConception, InfantDOB = DateOfBirth, 
-            InfantSex = Sex, InfantGroupAtBirth = GroupAtBirth, InfantGroupAtBirthCode = GroupAtBirthCode, 
+            InfantSex = Sex, InfantGroupAtBirthName = GroupAtBirthName, InfantGroupAtBirthCode = GroupAtBirthCode, 
             Survived1Y, InfantDepartDate = DepartDate, AgeAtDepart, InfantDepartType = DepartType,
             InfantCauseOfDeath = CauseOfDeath, InfantDepartComments = DeathComments) #Use code for groups? check other queries.
   
-  amt <- get_alphamale_tenures (pace_db) %>% 
-    filter (Group %in% c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")) %>%
+  amt <- getv_AlphaMaleTenure (paceR_db) %>% 
+    filter (GroupCode %in% c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")) %>%
     mutate_each (funs (as.Date), AMT_DateStart, AMT_DateEnd, AlphaMaleDOB) %>% 
     # CP fissioned into CPAD and CPRM on 2013-01-01 -> query takes into account if alpha in new groups is the same as before fission
     mutate (lastmale_CP_DateEnd = last (.[.$Group == "CP",][["AMT_DateEnd"]])) %>% 
@@ -232,7 +234,7 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     select (InfantID, InfantName, InfantSex, Mother, InfantDateOfConception, InfantDOB, InfantGroupAtBirth, InfantGroupAtBirthCode,
             InfantDepartDate, AgeAtDepart, Survived1Y, InfanticideRisk, GroupDuringInfanticideRisk, New_AM, New_AMT_Start, Old_AM, Old_AMT_End,
             InfantDepartType, InfantCauseOfDeath, InfantDepartComments)
-
+  
   # Short version of table
   if(!full){
     infanticide_risk <- infanticide_risk %>%
@@ -241,3 +243,8 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
   
   return (infanticide_risk)
 }
+
+
+
+
+
