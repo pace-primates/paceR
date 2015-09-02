@@ -44,7 +44,7 @@ To get data from PACE, you must create an SSH tunnel. If you have set up your SS
 system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 ```
 
-With the tunnel created, we can now connect to the database(s). The primary database is called "monkey". There is also a secondary database called "paceR" that has a variety of convenient views that are designed to be used with this package. We'll create connections to both.
+With the tunnel created, we can now connect to the database(s). The primary database is called `monkey`. There is also a secondary database called `paceR` that has a variety of convenient views that are designed to be used with this package. We'll create connections to both.
 
 ``` r
   # Connect to monkey database
@@ -63,7 +63,7 @@ Once you get the connection worked out, you now can pull data from the database.
 
 ### Downloading data using saved views (RECOMMENDED METHOD!)
 
-The best way to get data from the database is to use the convenient saved "views". These are stored in the paceR database, and they should be called using the functions that begin with `getv_`
+The best way to get data from the database is to use the convenient saved "views". These are stored in the `paceR` database, and they should be called using the functions that begin with `getv_`
 
 ``` r
 # Get a Individuals data
@@ -108,7 +108,7 @@ The best way to get data from the database is to use the convenient saved "views
 
 ### Downloading raw database tables (NOT RECOMMENDED!)
 
-If you want to download **raw database tables**, then you should use function `get_pace_tbl()`. All tables are stored in the "monkey" database, and so when you use this function, you must pass the connection to the "monkey" database in addition to the name of the table that you want to download. For example:
+If you want to download **raw database tables**, then you should use function `get_pace_tbl()`. All tables are stored in the `monkey` database, and so when you use this function, you must pass the connection to the `monkey` database in addition to the name of the table that you want to download. For example:
 
 ``` r
 # Get the raw individuals table
@@ -152,7 +152,7 @@ If you want to download **raw database tables**, then you should use function `g
 #> Variables not shown: DateOfDeathFromCensus (chr), Comments (chr)
 ```
 
-Note that the "foreign keys" (i.e., the columns that end with "ID") are just uninformative numbers! To make use of the data, you might need to join table by their ID relevant fields.
+Note that the "foreign keys" (i.e., the columns that end with "ID") are just uninformative numbers! To make use of the data, you might need to join the tables by their ID relevant fields.
 
 ``` r
 # Join the individuals and deaths tables
