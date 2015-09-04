@@ -94,7 +94,7 @@ The best way to get data from the database is to use the convenient saved "views
 (i2 <- getv_Individual(paceR_db, full = FALSE))
 ```
 
-Currently, there following functions are available:
+Currently, the following functions are available:
 
 * `getv_CensusMonthly()`
 * `getv_Individual()`

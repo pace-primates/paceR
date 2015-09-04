@@ -26,7 +26,7 @@ library(paceR)
 load_pace_packages()
 ```
 
-I assume that you have already [set up the connections to the database](README.md)
+I assume that you have already [set up the connections to the database](README.md).
 
 ```{r, echo = FALSE}
   # Connect to monkey database
