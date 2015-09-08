@@ -73,7 +73,7 @@ getv_Phenology <- function(paceR_db, full = TRUE){
   return(p)
 }
 
-#' Get the Alphamale-tenure table.
+#' Get table with alpha male tenures.
 #'
 #' @param paceR_db The src_mysql connection to the PaceR Database.
 #' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
@@ -81,19 +81,43 @@ getv_Phenology <- function(paceR_db, full = TRUE){
 #' @export
 #' @examples
 #' getv_AlphaMaleTenure(paceR_db)
-
 getv_AlphaMaleTenure <- function(paceR_db, full = TRUE){
-  
+
   alpha_tenures <- get_pace_tbl(paceR_db, "vAlphaMaleTenure") %>%
     arrange(GroupCode, AMT_DateStart) %>%
     select(GroupCode, GroupName, AMT_DateStart, AMT_DateEnd,
            AlphaMaleID, AlphaMale, AlphaMaleDOB,
            AMT_Comments, AlphaMaleTenureID) %>%
     mutate_each(funs(as.Date), contains("Date"), AlphaMaleDOB)
-  
-  if (!full){
+
+  if (!full) {
     alpha_tenures <- alpha_tenures %>%
       select(GroupCode, AMT_DateStart, AMT_DateEnd, AlphaMale)
+    # sorted out: GroupName, AlphaMaleID, AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID
+  }
+  return(alpha_tenures)
+}
+
+#' Get table with alpha female tenures.
+#'
+#' @param paceR_db The src_mysql connection to the PaceR Database.
+#' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
+#'
+#' @export
+#' @examples
+#' getv_AlphaFemaleTenure(paceR_db)
+getv_AlphaFemaleTenure <- function(paceR_db, full = TRUE){
+
+  alpha_tenures <- get_pace_tbl(paceR_db, "vAlphaFemaleTenure") %>%
+    arrange(GroupCode, AFT_DateStart) %>%
+    select(GroupCode, GroupName, AFT_DateStart, AFT_DateEnd,
+           AlphaFemaleID, AlphaFemale, AlphaFemaleDOB,
+           AFT_Comments, AlphaFemaleTenureID) %>%
+    mutate_each(funs(as.Date), contains("Date"), AlphaFemaleDOB)
+
+  if (!full) {
+    alpha_tenures <- alpha_tenures %>%
+      select(GroupCode, AFT_DateStart, AFT_DateEnd, AlphaFemale)
     # sorted out: GroupName, AlphaMaleID, AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID
   }
   return(alpha_tenures)
