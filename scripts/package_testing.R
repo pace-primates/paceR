@@ -22,6 +22,7 @@ system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
 paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
 
+
 # Get the individuals table
 ind <- get_individuals(pace_db)
 
@@ -95,3 +96,8 @@ autoplot(res2)
 temp <- get_pace_tbl(paceR_db, "vFocalData", collect = FALSE) %>%
   filter(SubProjectID == 13) %>%
   collect()
+
+get_biography(pace_db) %>%
+  filter(DepartType == "End Of Observation" & DepartDate < as.Date("2015-06-30")) %>%
+  arrange(GroupLastListed, DepartDate) %>%
+  View()

@@ -4,5 +4,3 @@
 *.Rproj
 
 scripts/temp_fc.R
-
-scripts/package_testing.R
