@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 *.Rproj
-
 scripts/temp_fc.R
+data

@@ -43,6 +43,28 @@ species <- unique(select(pheno, SpeciesName, SpeciesCode))
 
 pheno$year_of <- factor(pheno$year_of)
 
+
+
+# Years with failed crops
+failed_years <- pheno %>%
+  group_by(SpeciesName, year_of, month_of) %>%
+  summarise(monthly_sum = sum(index_avail)) %>%
+  ungroup() %>%
+  group_by(SpeciesName, year_of) %>%
+  summarise(yearly_sum = sum(monthly_sum),
+            n_months = n()) %>%
+  filter(yearly_sum == 0 & n_months == 12)
+
+# Months with no fruit (require at least 3 years)
+bare_months <- pheno %>%
+  group_by(SpeciesName, year_of, month_of) %>%
+  summarise(monthly_sum = sum(index_avail)) %>%
+  ungroup() %>%
+  group_by(SpeciesName, month_of) %>%
+  summarise(monthly_sum = sum(monthly_sum),
+            n_years = n()) %>%
+  filter(monthly_sum == 0 & n_years >= 3)
+
 # mods <- pheno %>%
 #   group_by(SpeciesName) %>%
 #   do(m = gamm(index_avail ~
@@ -78,8 +100,14 @@ gam_pred <- gam_pred %>%
 
 gam_pred[gam_pred$avail < 0, ]$avail <- 0
 
-ggplot(gam_pred, aes(x = month_of, y = year_of, fill = avail)) +
-  geom_raster(interpolate = TRUE) +
+gam_pred <- gam_pred %>%
+  left_join(bare_months) %>%
+  left_join(failed_years) %>%
+  # mutate(avail_fixed = ifelse(!is.na(monthly_sum) | !is.na(yearly_sum), 0, avail))
+  mutate(avail_fixed = ifelse(!is.na(yearly_sum), 0, avail))
+
+ggplot(gam_pred, aes(x = month_of, y = year_of, fill = avail_fixed)) +
+  geom_raster() +
   scale_fill_gradientn(colours = viridis(256),
                        trans = sqrt_trans(),
                        limits = c(0, 1),
@@ -91,6 +119,8 @@ ggplot(gam_pred, aes(x = month_of, y = year_of, fill = avail)) +
         axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.key.width = unit(2.5, "cm")) +
   labs(title = "GAMM predictions")
+
+
 
 mods1 <- pheno %>%
   group_by(SpeciesName) %>%
@@ -154,33 +184,27 @@ tr <- get_pace_tbl(paceR_db, "vVegetationTransect")
 
 # Get transect trees from target pheno species
 tr_pheno <- tr %>%
-  filter(CodeName %in% full_species) %>%
+  # filter(CodeName %in% species$SpeciesCode) %>%
   mutate(DateOf = ymd(DateOf)) %>%
   arrange(TransectID, DateOf, TreeID, StemSeqNum)
-
-# Sort
-tr_pheno <- tr_pheno[with(tr_pheno, order(tree_id)),]
-
-# Clean up column order and row names
-tr_pheno <- tr_pheno[, c(2:7, 1, 16, 8:15)]
-row.names(tr_pheno) <- NULL
 
 # Fill in fixed DBH for bromeliads, since it is not recorded
 # Using 5 cm per fruiting plant
 # Also ensure that each has a positive n_stems
-tr_pheno[(tr_pheno$code_name=="BPLU" |
-            tr_pheno$code_name=="BPIN"),]$dbh <- 5
-tr_pheno[((tr_pheno$code_name=="BPLU" |
-             tr_pheno$code_name=="BPIN") &
-            is.na(tr_pheno$n_stems)),]$n_stems <- 1
+tr_pheno %>%
+  mutate(dbh = ifelse(CodeName %in% c("BPLU", "BPIN"), 5, Dbh),
+         Dbh = ifelse(CodeName %in% c("BPLU", "BPIN"), 5, Dbh))
 
-# Weight bromeliad DBH by n_stems
-tr_pheno[(tr_pheno$code_name=="BPLU" |
-            tr_pheno$code_name=="BPIN"),]$dbh <-
-  tr_pheno[(tr_pheno$code_name=="BPLU" |
-              tr_pheno$code_name=="BPIN"),]$dbh *
-  tr_pheno[(tr_pheno$code_name=="BPLU" |
-              tr_pheno$code_name=="BPIN"),]$n_stems
+# Group by TreeID and calculate virtual DBH
+tr_pheno <- tr_pheno %>%
+  group_by(DateOf, TransectID, SpeciesName, TreeID, ProportionOfTreeInTransect,
+           CodeName) %>%
+  mutate(abh = (pi * Dbh ^ 2) / 4,
+         n_stems = 1) %>%
+  summarise(n_stems = n(),
+            abh_total = sum(abh),
+            dbh = sqrt(4 * abh_total / pi) * n_stems) %>%
+  ungroup()
 
 
 
