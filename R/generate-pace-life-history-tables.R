@@ -92,7 +92,7 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 #' @examples
 #' get_infanticide_risk (paceR_db)
 
-get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
+get_infanticide_risk <- function(paceR_db, full = TRUE, projectID = 1){
   
   individuals <- getv_Individual (paceR_db) %>% 
     select (-DayDifference, - Phenotype) %>% 
@@ -226,14 +226,14 @@ get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
     mutate (InfanticideRisk = ifelse (New_AM == "Legolas" & Old_AM == "Legolas", "GS", InfanticideRisk)) %>% 
     mutate (InfanticideRisk = ifelse (!is.na (InfanticideRisk), InfanticideRisk, "GS")) %>% 
     select (-BirthRisk, -InfanticideRisk_Start) %>% 
-    select (InfantID, InfantName, InfantSex, Mother, InfantDateOfConception, InfantDOB, InfantGroupAtBirthCode, InfantGroupAtBirthCode,
+    select (InfantID, InfantName, InfantSex, Mother, InfantDateOfConception, InfantDOB, InfantGroupAtBirthName, InfantGroupAtBirthCode,
             InfantDepartDate, AgeAtDepart, Survived1Y, InfanticideRisk, GroupDuringInfanticideRisk, New_AM, New_AMT_Start, Old_AM, Old_AMT_End,
             InfantDepartType, InfantCauseOfDeath, InfantDepartComments)
 
   # Short version of table
   if(!full){
     infanticide_risk <- infanticide_risk %>%
-      select (-InfantSex, -Mother, -InfantDateOfConception, -InfantGroupAtBirthCode, -Old_AM, -Old_AMT_End)
+      select (-InfantSex, -Mother, -InfantDateOfConception, -InfantGroupAtBirthName, -Old_AM, -Old_AMT_End)
   }
   
   return (infanticide_risk)
