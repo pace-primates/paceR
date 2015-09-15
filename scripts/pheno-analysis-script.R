@@ -38,6 +38,8 @@ fr <- pheno %>%
   group_by(SpeciesName, year_of, month_of) %>%
   summarise(avail = mean(index_avail))
 
+fr$year_of <- factor(fr$year_of)
+
 # Generate list of unique species, for later use
 species <- unique(select(pheno, SpeciesName, SpeciesCode))
 
@@ -76,7 +78,7 @@ bare_months <- pheno %>%
 
 mods2 <- pheno %>%
   group_by(SpeciesName) %>%
-  do(m = gamm(index_avail ~ s(as.numeric(month_of, bs = "cc")) +
+  do(m = gamm(index_avail ~ s(as.numeric(month_of), bs = "cc", k = 13) +
                 year_of,
               random = list(TreeID = ~1),
               knots = list(month_of = c(1, 13)),
@@ -86,6 +88,7 @@ gam_pred <- list()
 for (i in 1:nrow(mods2)) {
   c_species <- mods2[i, ]$SpeciesName
   c_gam <- mods2[i, ]$m[[1]]$gam
+  # c_gam <- mods2[i, ]$m[[1]]
   set <- filter(pheno, SpeciesName == c_species)
 
   gam_pred[[i]] <- set %>%
@@ -358,18 +361,17 @@ biomass_avail <- biomass_avail %>%
 # ---- final_species_plot -------------------------------------------------
 
 ggplot(biomass_avail, aes(x = month_of, y = year_of, fill = biomass_monthly_kg)) +
-  geom_raster() +
+  geom_tile(color = "gray50") +
   scale_fill_gradientn(colours = viridis(256),
                        trans = sqrt_trans(),
-                       # limits = c(0, 1),
-                       name = "Available Fruit Biomass") +
+                       name = "Fruit biomass (kg / ha)") +
   facet_wrap(~SpeciesName, nrow = 5) +
   theme_minimal() +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.key.width = unit(2.5, "cm")) +
-  labs(title = "GAMM predictions")
+  labs(title = "GAMM predictions\n", x = "\nMonth", y = "Year\n")
 
 
 # ---- final_yearly_plot --------------------------------------------------
@@ -383,18 +385,16 @@ biomass_yearly <- biomass_avail %>%
 biomass_yearly$year_of <- factor(biomass_yearly$year_of)
 
 ggplot(biomass_yearly, aes(x = month_of, y = year_of, fill = total_biomass)) +
-  geom_raster() +
+  geom_tile(color = "white") +
   scale_fill_gradientn(colours = viridis(256),
-                       # trans = sqrt_trans(),
-                       # limits = c(0, max(biomass_yearly$total_biomass)),
-                       name = "Available Fruit Biomass") +
-  # facet_wrap(~SpeciesName, nrow = 5) +
+                       name = "Fruit biomass (kg / ha)") +
   theme_minimal() +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.key.width = unit(2.5, "cm")) +
-  labs(title = "GAMM predictions")
+  labs(title = "Available Fruit Biomass by Month and Year\n",
+       x = "\nMonth", y = "Year\n")
 
 
 # ---- seasonally (years combined) ----------------------------------------
