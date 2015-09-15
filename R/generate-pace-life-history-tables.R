@@ -1,12 +1,12 @@
 #' Get table with biography from birth until death, disappearance or end of observation of individuals.
 #'
-#' @param pace_db The src_mysql connection to the PACE Database.
+#' @param paceR_db The src_mysql connection to the paceR Database (view-collection).
 #' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
 #' @param projectID Option to get data only from specific project (1-7?). Default is 1 (Santa Rosa)
 #'
 #' @export
 #' @examples
-#' get_biography(pace_db)
+#' get_biography(paceR_db)
 
 get_biography <- function(paceR_db, full = TRUE, projectID = 1){
   
@@ -84,13 +84,13 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 #' This does not count for infants conceived after the takeover
 #' (i.e. born more than 5.5 months = 165 days after the takeover)
 #' 
-#' @param pace_db The src_mysql connection to the PACE Database.
+#' @param paceR_db The src_mysql connection to the paceR Database (view-collection).
 #' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
 #' @param projectID Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)
 #'
 #' @export
 #' @examples
-#' get_infanticide_risk (pace_db)
+#' get_infanticide_risk (paceR_db)
 
 get_infanticide_risk <- function(pace_db, full = TRUE, projectID = 1){
   
