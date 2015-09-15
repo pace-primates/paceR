@@ -8,11 +8,11 @@ as a consequence of alpha male reversals}
 get_infanticide_risk(pace_db, full = TRUE, projectID = 1)
 }
 \arguments{
-\item{pace_db}{The src_mysql connection to the PACE Database.}
-
 \item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 
 \item{projectID}{Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)}
+
+\item{paceR_db}{The src_mysql connection to the paceR Database (view-collection).}
 }
 \description{
 Unstable (i.e. risky) periods start with the end of an alpha alpha male tenureship
@@ -21,6 +21,6 @@ This does not count for infants conceived after the takeover
 (i.e. born more than 5.5 months = 165 days after the takeover)
 }
 \examples{
-get_infanticide_risk (pace_db)
+get_infanticide_risk (paceR_db)
 }
 
