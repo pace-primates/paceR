@@ -5,14 +5,14 @@
 \title{Get table with risk of infanticide for infants
 as a consequence of alpha male reversals}
 \usage{
-get_infanticide_risk(pace_db, full = TRUE, projectID = 1)
+get_infanticide_risk(paceR_db, full = TRUE, projectID = 1)
 }
 \arguments{
+\item{paceR_db}{The src_mysql connection to the paceR Database (view-collection).}
+
 \item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
 
 \item{projectID}{Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)}
-
-\item{paceR_db}{The src_mysql connection to the paceR Database (view-collection).}
 }
 \description{
 Unstable (i.e. risky) periods start with the end of an alpha alpha male tenureship

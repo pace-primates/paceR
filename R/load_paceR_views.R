@@ -122,3 +122,29 @@ getv_AlphaFemaleTenure <- function(paceR_db, full = TRUE){
   }
   return(alpha_tenures)
 }
+
+#' Get table with Dominance hierachies.
+#'
+#' @param paceR_db The src_mysql connection to the PaceR Database.
+#' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
+#'
+#' @export
+#' @examples
+#' getv_DominanceHierarchy(paceR_db)
+getv_DominanceHierarchy <- function(paceR_db, full = TRUE){
+  
+  hierarchy <- get_pace_tbl(paceR_db, "vDominanceHierarchy") %>%
+    select(DominanceHierarchyID, SpeciesCommonName, GroupName, GroupCode, HierarchyDateStart,
+           HierarchyDateEnd, HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments) %>% 
+    mutate_each(funs(as.Date), contains("Date"), DateOfBirth) %>% 
+    arrange(GroupCode, HierarchyDateStart, Rank)
+  
+
+  if (!full) {
+    hierarchy <- hierarchy %>%
+      select(GroupCode, HierarchyDateStart, HierarchyDateEnd,
+             HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments)
+    # sorted out: DominanceHierarchyID, SpeciesCommonName, GroupName, 
+  }
+  return(hierarchy)
+}
