@@ -3,13 +3,14 @@
 #' @export
 #' @examples
 #' load_pace_packages()
-load_pace_packages <- function (...)
+load_pace_packages <- function(...)
 {
-  packages <- c('stringr', 'plyr', 'lubridate', 'tidyr', 'dplyr')
+  packages <- c('stringr', 'plyr', 'lubridate', 'tidyr', 'dplyr', 'ggplot2',
+                'grid', 'scales')
   for (package in packages) {
     if (!isTRUE(require(package, character.only = TRUE))) {
       install.packages(package)
-      require (package, character.only = TRUE, ...)
+      require(package, character.only = TRUE, ...)
     } else
       require(package, character.only = TRUE, ...)
   }

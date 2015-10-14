@@ -1,11 +1,19 @@
-pheno_fruit_indices_sr <- function(pheno = NULL, type = "raw", ...){
+#' Calculate fruit availability indices using different methods.
+#'
+#' @param pheno The data frame of phenology data from Santa Rosa.
+#' @param method Either "raw", "loess", or "gam. The default is "raw".
+#'
+#' @export
+#' @examples
+#' indices_lo <- pheno_fruit_indices_sr(pheno, method = "loess")
+pheno_fruit_indices_sr <- function(pheno = NULL, method = "raw", ...){
 
   pheno$year_of <- factor(pheno$year_of)
 
   # Generate list of unique species, for later use
   species <- unique(select(pheno, SpeciesName, SpeciesCode))
 
-  if (type == "raw") {
+  if (method == "raw") {
 
     res <- pheno %>%
       group_by(SpeciesName, year_of, month_of) %>%
@@ -14,7 +22,7 @@ pheno_fruit_indices_sr <- function(pheno = NULL, type = "raw", ...){
     res$year_of <- factor(res$year_of)
 
   }
-  else if (type == "smoothed") {
+  else if (method == "gam") {
 
     # Years with failed crops
     failed_years <- pheno %>%
@@ -38,7 +46,7 @@ pheno_fruit_indices_sr <- function(pheno = NULL, type = "raw", ...){
 
     mods2 <- pheno %>%
       group_by(SpeciesName) %>%
-      do(m = gamm(index_avail ~ s(as.numeric(month_of), bs = "cc", k = 13) +
+      do(m = mgcv::gamm(index_avail ~ s(as.numeric(month_of), bs = "cc", k = 13) +
                     year_of,
                   random = list(TreeID = ~1),
                   knots = list(month_of = c(1, 13)),
@@ -48,7 +56,6 @@ pheno_fruit_indices_sr <- function(pheno = NULL, type = "raw", ...){
     for (i in 1:nrow(mods2)) {
       c_species <- mods2[i, ]$SpeciesName
       c_gam <- mods2[i, ]$m[[1]]$gam
-      # c_gam <- mods2[i, ]$m[[1]]
       set <- filter(pheno, SpeciesName == c_species)
 
       gam_pred[[i]] <- set %>%
@@ -66,9 +73,68 @@ pheno_fruit_indices_sr <- function(pheno = NULL, type = "raw", ...){
     gam_pred <- gam_pred %>%
       left_join(bare_months, by = c("SpeciesName", "month_of")) %>%
       left_join(failed_years, by = c("SpeciesName", "year_of")) %>%
-      mutate(avail = ifelse(!is.na(yearly_sum), 0, avail))
+      mutate(avail = ifelse(!is.na(yearly_sum) | !is.na(monthly_sum), 0, avail))
 
     res <- gam_pred
+  }
+  else if (method == "loess") {
+
+    # Years with failed crops
+    failed_years <- pheno %>%
+      group_by(SpeciesName, year_of, month_of) %>%
+      summarise(monthly_sum = sum(index_avail)) %>%
+      ungroup() %>%
+      group_by(SpeciesName, year_of) %>%
+      summarise(yearly_sum = sum(monthly_sum),
+                n_months = n()) %>%
+      filter(yearly_sum == 0 & n_months == 12)
+
+    # Months with no fruit (require at least 3 years)
+    bare_months <- pheno %>%
+      group_by(SpeciesName, year_of, month_of) %>%
+      summarise(monthly_sum = sum(index_avail)) %>%
+      ungroup() %>%
+      group_by(SpeciesName, month_of) %>%
+      summarise(monthly_sum = sum(monthly_sum),
+                n_years = n()) %>%
+      filter(monthly_sum == 0 & n_years >= 3)
+
+    mods2 <- pheno %>%
+      group_by(SpeciesName, year_of) %>%
+      do(l = loess(index_avail ~ as.numeric(month_of), data = ., span = 0.5))
+
+    loess_pred <- list()
+    for (i in 1:nrow(mods2)) {
+      c_species <- mods2[i, ]$SpeciesName
+      c_loess <- mods2[i, ]$l[[1]]
+      c_year <- mods2[i, ]$year_of
+      set <- filter(pheno, SpeciesName == c_species & year_of == c_year)
+
+      if (nrow(set) > 10) {
+        loess_pred[[i]] <- set %>%
+          mutate(avail = predict(c_loess, newdata = set))
+      }
+      else {
+        loess_pred[[i]] <- set %>%
+          mutate(avail = 0)
+      }
+      # message(i)
+    }
+
+    loess_pred <- bind_rows(loess_pred)
+
+    loess_pred <- loess_pred %>%
+      group_by(SpeciesName, year_of, month_of) %>%
+      summarise(avail = mean(avail))
+
+    loess_pred[loess_pred$avail < 0, ]$avail <- 0
+
+    loess_pred <- loess_pred %>%
+      left_join(bare_months, by = c("SpeciesName", "month_of")) %>%
+      left_join(failed_years, by = c("SpeciesName", "year_of")) %>%
+      mutate(avail = ifelse(!is.na(yearly_sum) | !is.na(monthly_sum), 0, avail))
+
+    res <- loess_pred
   }
 
   res <- inner_join(res, species, by = "SpeciesName")
@@ -77,10 +143,18 @@ pheno_fruit_indices_sr <- function(pheno = NULL, type = "raw", ...){
 
 }
 
-pheno_prep_fruit_sr <- function(ph = NULL, exclude_species = "", ...){
+#' Convert a Santa Rosa phenology table from long to wide format and prepare for fruit biomass calculation.
+#'
+#' @param pheno The data frame of phenology data from Santa Rosa.
+#' @param exclude_species A character vector of species codes to exclude.
+#'
+#' @export
+#' @examples
+#' pheno <- pheno_prep_fruit_sr(ph, exclude_species = c("SPAV", "FUNK"))
+pheno_prep_fruit_sr <- function(pheno = NULL, exclude_species = "", ...){
 
   # Get SR data only
-  pheno <- ph %>% filter(Project == "SR")
+  pheno <- pheno %>% filter(Project == "SR")
 
   # Retain only records related to fruit
   pheno <- pheno %>% filter(FoodPart == "Fruit")
@@ -129,12 +203,21 @@ pheno_prep_fruit_sr <- function(ph = NULL, exclude_species = "", ...){
 
 }
 
-plot_pheno_indices <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, "YlGnBu"))){
+
+#' Generate a heatmap of fruit availability indices.
+#'
+#' @param df The data frame of index data to plot.
+#' @param fill_col A color palette for the fill gradient.
+#'
+#' @export
+#' @examples
+#' plot_pheno_indices(indices_lo)
+plot_pheno_indices <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer::brewer.pal(9, "YlGnBu"))){
 
   p <- ggplot(df, aes(x = month_of, y = year_of, fill = avail)) +
   geom_tile(color = "gray50") +
   scale_fill_gradientn(colours = fill_col,
-                       trans = sqrt_trans(),
+                       trans = scales::sqrt_trans(),
                        limits = c(0, 1),
                        name = "Availability Index") +
   facet_wrap(~SpeciesName, nrow = 5) +
@@ -143,13 +226,128 @@ plot_pheno_indices <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, 
         strip.background = element_blank(),
         panel.grid = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.key.width = unit(2.5, "cm")) +
-  labs(title = "Raw Fruit Availability Indices")
+        legend.key.width = grid::unit(2.5, "cm")) +
+  labs(title = "Fruit Availability Indices")
 
   return(p)
 
 }
 
+
+#' Get relevant FPV data corresponding to pheno species
+#'
+#' @param fpv FPV data.
+#' @param pheno Phenology data created by pheno_prep_fruit_sr.
+#'
+#' @export
+#' @examples
+#' fpv <- fpv_subset_pheno_sr(fpv, pheno)
+fpv_subset_pheno_sr <- function(fpv = NULL, pheno = NULL) {
+
+  # Generate list of unique species, for later use
+  species <- unique(select(pheno, SpeciesName, SpeciesCode))
+
+  # Create dbh column
+  fpv$dbh <- sqrt((4 * fpv$Area) / pi)
+
+  # Fill in fixed DBH for bromeliads, since it is not recorded
+  # Using 5 cm per fruiting plant
+  # Also ensure that each bromeliad fpv has a positive NFruiting
+  fpv <- fpv %>%
+    mutate(dbh = ifelse(Code %in% c("BPLU", "BPIN"), 5, dbh),
+           NFruiting = ifelse(Code %in% c("BPLU", "BPIN") & is.na(NFruiting),
+                              1, NFruiting),
+           dbh = ifelse(Code %in% c("BPLU", "BPIN"), dbh* NFruiting, dbh))
+
+  # Remove NA values and extra columns, because not useful here
+  fpv <- fpv %>%
+    filter(!is.na(dbh) ) %>%
+    select(SpeciesName = Species, code_name = Code, DateOf = Datim,
+           n_stems = NumStems, FruitCover, FruitMaturity, NFruiting, dbh)
+
+  # Restrict to pheno species and sort by species & dbh
+  fpv <- fpv %>%
+    filter(code_name %in% species$SpeciesCode) %>%
+    arrange(code_name, dbh)
+
+  return(fpv)
+
+}
+
+
+#' Set minimum DBHs for fruit-producing trees of each species.
+#'
+#' @param fpv The FPV data.
+#'
+#' @export
+#' @examples
+#' min_dbh <- fpv_get_min_dbh_sr(fpv)
+fpv_get_min_dbh_sr <- function(fpv = NULL) {
+
+  # Store uncorrected min dbhs
+  min_dbh <- fpv %>%
+    group_by(code_name) %>%
+    summarise(threshold_dbh = min(dbh),
+              n_trees = n())
+
+  # Fix species with the most egregious lower outliers:
+  # ACOL, AEDU, ARET, BCRA, FCOT, FMOR, KCAL,
+  # LSPE, MCHI, MTIN, SOBO
+  min_dbh[min_dbh$code_name == "ACOL", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "ACOL"))$dbh[4]
+
+  min_dbh[min_dbh$code_name == "AEDU", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "AEDU"))$dbh[2]
+
+  min_dbh[min_dbh$code_name == "ARET", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "ARET"))$dbh[2]
+
+  min_dbh[min_dbh$code_name == "BCRA", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "BCRA"))$dbh[2]
+
+  min_dbh[min_dbh$code_name == "FCOT", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "FCOT"))$dbh[2]
+
+  min_dbh[min_dbh$code_name == "FMOR", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "FMOR"))$dbh[2]
+
+  min_dbh[min_dbh$code_name == "KCAL", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "KCAL"))$dbh[2]
+
+  min_dbh[min_dbh$code_name == "MCHI", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "MCHI"))$dbh[2]
+
+  min_dbh[min_dbh$code_name == "MTIN", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "MTIN"))$dbh[3]
+
+  min_dbh[min_dbh$code_name == "SOBO", ]$threshold_dbh <-
+    head(subset(fpv, code_name == "SOBO"))$dbh[2]
+
+
+  min_dbh[min_dbh$code_name == "TAME", ]$threshold_dbh <-
+    rev(sort(subset(tr, SpeciesName == "Trichilia americana")$Dbh))[1]
+
+  min_dbh[min_dbh$code_name == "SEXC", ]$threshold_dbh <-
+    rev(sort(subset(tr, SpeciesName == "Sciadodendron excelsum")$Dbh))[1]
+
+  min_dbh[min_dbh$code_name == "SGLN", ]$threshold_dbh <-
+    rev(sort(subset(tr, SpeciesName == "Sapium glandulosum")$Dbh))[2]
+
+  return(min_dbh)
+
+}
+
+
+#' Get relevant transect data corresponding to pheno species.
+#' Also exclude individual trees that are too small to produce food based on FPVs.
+#'
+#' @param tr PACE transect data.
+#' @param pheno Phenology data created by pheno_prep_fruit_sr.
+#' @param min_dbh FPV minimum DBH data created by fpv_get_min_dbh_sr.
+#'
+#' @export
+#' @examples
+#' tr_pheno_fpv <- transect_subset_sr(tr, pheno, min_dbh)
 transect_subset_sr <- function(tr = NULL, pheno = NULL, min_dbh = NULL) {
 
   # Generate list of unique species, for later use
@@ -191,39 +389,14 @@ transect_subset_sr <- function(tr = NULL, pheno = NULL, min_dbh = NULL) {
 
 }
 
-fpv_subset_pheno_sr <- function(fpv = NULL, pheno = NULL) {
 
-  # Generate list of unique species, for later use
-  species <- unique(select(pheno, SpeciesName, SpeciesCode))
-
-  # Create dbh column
-  fpv$dbh <- sqrt((4 * fpv$Area) / pi)
-
-  # Fill in fixed DBH for bromeliads, since it is not recorded
-  # Using 5 cm per fruiting plant
-  # Also ensure that each bromeliad fpv has a positive NFruiting
-  fpv <- fpv %>%
-    mutate(dbh = ifelse(Code %in% c("BPLU", "BPIN"), 5, dbh),
-           NFruiting = ifelse(Code %in% c("BPLU", "BPIN") & is.na(NFruiting),
-                              1, NFruiting),
-           dbh = ifelse(Code %in% c("BPLU", "BPIN"), dbh* NFruiting, dbh))
-
-  # Remove NA values and extra columns, because not useful here
-  fpv <- fpv %>%
-    filter(!is.na(dbh) ) %>%
-    select(SpeciesName = Species, code_name = Code, DateOf = Datim,
-           n_stems = NumStems, FruitCover, FruitMaturity, NFruiting, dbh)
-
-  # Restrict to pheno species and sort by species & dbh
-  fpv <- fpv %>%
-    filter(code_name %in% species$SpeciesCode) %>%
-    arrange(code_name, dbh)
-
-  return(fpv)
-
-}
-
-
+#' Create boxplots of DBHs for trees in FPV data for each species to find size of fruit-producing trees.
+#'
+#' @param fpv The FPV data.
+#'
+#' @export
+#' @examples
+#' plot_fpv_dbh(fpv)
 plot_fpv_dbh <- function(fpv) {
 
   # Look at unchecked min dbhs, log tranformed
@@ -242,69 +415,16 @@ plot_fpv_dbh <- function(fpv) {
 }
 
 
-fpv_get_min_dbh_sr <- function(fpv = NULL) {
-
-  # Store uncorrected min dbhs
-  min_dbh <- fpv %>%
-    group_by(code_name) %>%
-    summarise(threshold_dbh = min(dbh),
-              n_trees = n())
-
-  # ---- fpv_fix_dbh_brief --------------------------------------------------
-
-  # Fix species with the most egregious lower outliers:
-  # ACOL, AEDU, ARET, BCRA, FCOT, FMOR, KCAL,
-  # LSPE, MCHI, MTIN, SOBO
-  min_dbh[min_dbh$code_name == "ACOL", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "ACOL"))$dbh[4]
-
-  min_dbh[min_dbh$code_name == "AEDU", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "AEDU"))$dbh[2]
-
-  min_dbh[min_dbh$code_name == "ARET", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "ARET"))$dbh[2]
-
-  min_dbh[min_dbh$code_name == "BCRA", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "BCRA"))$dbh[2]
-
-  min_dbh[min_dbh$code_name == "FCOT", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "FCOT"))$dbh[2]
-
-  min_dbh[min_dbh$code_name == "FMOR", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "FMOR"))$dbh[2]
-
-  min_dbh[min_dbh$code_name == "KCAL", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "KCAL"))$dbh[2]
-
-  min_dbh[min_dbh$code_name == "MCHI", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "MCHI"))$dbh[2]
-
-  min_dbh[min_dbh$code_name == "MTIN", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "MTIN"))$dbh[3]
-
-  min_dbh[min_dbh$code_name == "SOBO", ]$threshold_dbh <-
-    head(subset(fpv, code_name == "SOBO"))$dbh[2]
-
-
-  # ---- fpv_dbh_extra ------------------------------------------------------
-
-  min_dbh[min_dbh$code_name == "TAME", ]$threshold_dbh <-
-    rev(sort(subset(tr, SpeciesName == "Trichilia americana")$Dbh))[1]
-
-  min_dbh[min_dbh$code_name == "SEXC", ]$threshold_dbh <-
-    rev(sort(subset(tr, SpeciesName == "Sciadodendron excelsum")$Dbh))[1]
-
-  min_dbh[min_dbh$code_name == "SGLN", ]$threshold_dbh <-
-    rev(sort(subset(tr, SpeciesName == "Sapium glandulosum")$Dbh))[2]
-
-  return(min_dbh)
-
-}
-
-
+#' Calculate max potential biomass for each species (if availability were 1).
+#'
+#' @param df Dataframe of data for biomass calculation created by transect_subset_sr
+#'
+#' @export
+#' @examples
+#' biomass_max <- biomass_max_sr(tr_pheno_fpv)
 biomass_max_sr <- function(df = NULL) {
 
-  biomass <- tr_pheno %>%
+  biomass <- df %>%
     group_by(CodeName) %>%
     filter(usable == TRUE) %>%
     summarise(biomass_total_kg = sum(ProportionOfTreeInTransect * 47 * dbh ^ 1.9) / 1000,
@@ -318,7 +438,16 @@ biomass_max_sr <- function(df = NULL) {
 
 }
 
-biomass_sr <- function(biomass_max = NULL, indices = NULL) {
+
+#' Calcuate available biomass using the indices as weights.
+#'
+#' @param biomass_max Dataframe of max biomass data created by biomass_max_sr
+#' @param indices Index data to use as weights created by pheno_fruit_indices_sr
+#'
+#' @export
+#' @examples
+#' biomass_avail_lo <- biomass_avail_sr(biomass_max, indices_lo)
+biomass_avail_sr <- function(biomass_max = NULL, indices = NULL) {
 
   biomass_avail <- indices %>%
     inner_join(biomass_max, by = c("SpeciesCode" = "CodeName")) %>%
@@ -329,6 +458,15 @@ biomass_sr <- function(biomass_max = NULL, indices = NULL) {
 
 }
 
+
+#' Generate a heatmap of availability fruit biomass for each species.
+#'
+#' @param df The data frame of biomass data created by biomass_avail_sr.
+#' @param fill_col A color palette for the fill gradient.
+#'
+#' @export
+#' @examples
+#' plot_biomass_species(biomass_avail_lo)
 plot_biomass_species <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, "YlGnBu"))) {
 
   p <- ggplot(df, aes(x = month_of, y = year_of, fill = biomass_monthly_kg)) +
@@ -348,7 +486,37 @@ plot_biomass_species <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9
 
 }
 
-plot_biomass_years <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, "YlGnBu"))) {
+
+#' Summarize available biomass data by summing species in each month / year.
+#'
+#' @param df Dataframe of available biomass data created by biomass_avail_sr
+#'
+#' @export
+#' @examples
+#' biomass_summary_lo <- biomass_monthly_summary(biomass_avail_lo)
+biomass_monthly_summary <- function(df = NULL) {
+
+  biomass_monthly <- df %>%
+    ungroup() %>%
+    filter(as.numeric(as.character(year_of)) > 2007) %>%
+    group_by(year_of, month_of) %>%
+    summarise(total_biomass = sum(biomass_monthly_kg))
+
+  biomass_monthly$year_of <- factor(biomass_monthly$year_of)
+
+  return(biomass_monthly)
+
+}
+
+#' Heatmap plots of total monthly biomass with species combined
+#'
+#' @param df Dataframe of summarized available biomass data created by biomass_monthly_summary.
+#' @param fill_col A color palette for the fill gradient.
+#'
+#' @export
+#' @examples
+#' plot_biomass(biomass_summary_lo)
+plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, "YlGnBu"))) {
 
   lim <- max(df$total_biomass)
 
@@ -369,16 +537,45 @@ plot_biomass_years <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, 
 
 }
 
-biomass_yearly_summary <- function(df = NULL) {
 
-  biomass_yearly <- df %>%
-    ungroup() %>%
-    filter(as.numeric(as.character(year_of)) > 2007) %>%
-    group_by(year_of, month_of) %>%
-    summarise(total_biomass = sum(biomass_monthly_kg))
 
-  biomass_yearly$year_of <- factor(biomass_yearly$year_of)
+#' Calculate available biomass. This function is a wrapper for most of the other phenology functions.
+#'
+#' @param ph Dataframe of raw PACE phenology data.
+#' @param tr Dataframe of raw PACE transect data.
+#' @param fpv Dataframe of FPV data (from CSV file).
+#' @param exclude_species A character vector of species codes to exclude.
+#' @param method Either "raw", "loess", or "gam. The default is "raw".
+#'
+#' @export
+#' @examples
+#' exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU", "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
+#' biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, method = "loess")
+get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "", method = "raw") {
 
-  return(biomass_yearly)
+  # Only work with Santa Rosa data
+  pheno <- pheno_prep_fruit_sr(ph, exclude_species)
+
+  # Calculate fruit availability indices
+  indices <- pheno_fruit_indices_sr(pheno, method = method)
+
+  # Get relevant FPV data corresponding to pheno species
+  fpv <- fpv_subset_pheno_sr(fpv, pheno)
+
+  # Fix minimum DBHs (currently done manually, need to verify)
+  min_dbh <- fpv_get_min_dbh_sr(fpv)
+
+  # Get relevant transect data corresponding to pheno species
+  # Also exclude individual trees that are too small to produce food based on FPVs
+  tr_pheno_fpv <- transect_subset_sr(tr, pheno, min_dbh)
+
+
+  # Potential peak biomass for each species
+  biomass_max <- biomass_max_sr(tr_pheno_fpv)
+
+  # Calcuate available biomass using the indices as weights
+  biomass_avail <- biomass_avail_sr(biomass_max, indices)
+
+  return(biomass_avail)
 
 }
