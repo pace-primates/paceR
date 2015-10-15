@@ -5,8 +5,7 @@
 #' load_pace_packages()
 load_pace_packages <- function(...)
 {
-  packages <- c('stringr', 'plyr', 'lubridate', 'tidyr', 'dplyr', 'ggplot2',
-                'grid', 'scales')
+  packages <- c('stringr', 'plyr', 'lubridate', 'tidyr', 'dplyr', 'ggplot2')
   for (package in packages) {
     if (!isTRUE(require(package, character.only = TRUE))) {
       install.packages(package)
