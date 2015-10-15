@@ -71,7 +71,7 @@ system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 If you have not set up an SSH key but you do have a username and password for the PACE database, then you can still create the tunnel by opening Terminal and typing the following __in Terminal, not in R!__:
 
 ```{r, eval = FALSE}
-'ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N'
+ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N
 ```
 
 Replace the "camposf" part with your username. You will then be prompted to enter your password. Once this is done, the tunnel has been created and you can return to R.
