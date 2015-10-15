@@ -38,13 +38,31 @@ This package makes heavy use of the data manipulation packages [stringr](http://
 Connecting to the PACE Database
 -------------------------------
 
-To get data from PACE, you must create an SSH tunnel. If you have set up your SSH key, you can do it like this:
+To get data from PACE, you must have a username and password for the PACE database, and you must create an SSH tunnel to the database server.
+
+### Connecting on a Mac
+
+If you have set up an SSH key (Fernando can help you do this), you can create the SSH tunnel by running this command in R:
 
 ``` r
 system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 ```
 
-With the tunnel created, we can now connect to the database(s). The primary database is called `monkey`. There is also a secondary database called `paceR` that has a variety of convenient views that are designed to be used with this package. We'll create connections to both.
+If you have not set up an SSH key but you do have a username and password for the PACE database, then you can still create the tunnel by opening Terminal and typing the following **in Terminal, not in R!**:
+
+``` r
+'ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N'
+```
+
+Replace the "camposf" part with your username. You will then be prompted to enter your password. Once this is done, the tunnel has been created and you can return to R.
+
+### Connecting on a Windows machine
+
+When you made an account, you should have received instructions from John about how to create the SSH tunnel using Putty/Plink. Just run this and have it open in the background.
+
+### Connecting to a database
+
+With the tunnel created, we can now connect to the database(s) in PACE. The primary database is called `monkey`. There is also a secondary database called `paceR` that has a variety of convenient views that are designed to be used with this package. We'll create connections to both.
 
 ``` r
   # Connect to monkey database
@@ -68,7 +86,7 @@ The best way to get data from the database is to use the convenient saved "views
 ``` r
 # Get a Individuals data
 (i2 <- getv_Individual(paceR_db))
-#> Source: local data frame [2,228 x 18]
+#> Source: local data frame [2,645 x 18]
 #> 
 #>    IndividualID Project PrimateSpecies     NameOf CodeName DateOfBirth
 #>           (int)   (chr)          (chr)      (chr)    (chr)      (date)
@@ -91,7 +109,7 @@ The best way to get data from the database is to use the convenient saved "views
 
 # Get a condensed version
 (i2 <- getv_Individual(paceR_db, full = FALSE))
-#> Source: local data frame [2,228 x 5]
+#> Source: local data frame [2,645 x 5]
 #> 
 #>    IndividualID     NameOf Project DateOfBirth     Sex
 #>           (int)      (chr)   (chr)      (date)   (chr)
@@ -108,7 +126,7 @@ The best way to get data from the database is to use the convenient saved "views
 #> ..          ...        ...     ...         ...     ...
 ```
 
-Currently, there following functions are available:
+Currently, the following functions are available:
 
 -   `getv_CensusMonthly()`
 -   `getv_Individual()`
@@ -121,7 +139,7 @@ If you want to download **raw database tables**, then you should use function `g
 ``` r
 # Get the raw individuals table
 (i <- get_pace_tbl(pace_db, "tblIndividual"))
-#> Source: local data frame [2,228 x 20]
+#> Source: local data frame [2,645 x 20]
 #> 
 #>       ID ProjectID PrimateSpeciesID     NameOf CodeName DateOfBirth
 #>    (int)     (int)            (int)      (chr)    (chr)       (chr)
