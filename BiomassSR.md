@@ -129,7 +129,7 @@ plot_biomass_monthly(b_summary_lo)
 
 ### GAMM Smoothing
 
-When the function is called with `smooth = "gam"`, the raw availability indices are smoothed using [Generalized Additive Mixed Models](https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/gamm.html). This is applied to each species separately. This smoothing method assumes that *the month-to-month fruiting pattern for a given species is the same from year to year*; what differs is the degree to which that species' cycle is expressed in any particular year. This assumption is probably bad for some species (like *Ficus*), but it's probably true for most species.
+When the function is called with `smooth = "gam"`, the raw availability indices are smoothed using [Generalized Additive Mixed Models](https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/gamm.html). This is applied to each species separately. This smoothing method assumes that *the month-to-month fruiting pattern for a given species is the same from year to year*; what differs is the degree to which that species' cycle is expressed in any particular year. This assumption is probably bad for some species (like *Ficus*), but it's probably a reasonable assumption for many species.
 
 Let's carry out the same steps with this method. First for each species.
 
