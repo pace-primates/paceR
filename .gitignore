@@ -4,3 +4,4 @@
 *.Rproj
 scripts/temp_fc.R
 data
+*_cache/
