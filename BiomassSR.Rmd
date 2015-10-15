@@ -44,7 +44,7 @@ Then you can load the required packages:
 
 and create connections to the "monkey" and "paceR" databases.
 
-```{r, echo = FALSE}
+```{r}
   # Connect to monkey database
   pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
   

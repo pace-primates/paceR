@@ -23,6 +23,14 @@ Then you can load the required packages:
 
 and create connections to the "monkey" and "paceR" databases.
 
+``` r
+  # Connect to monkey database
+  pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+  
+  # Connect to paceR database  
+  paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
+```
+
 Then we can get the required data:
 
 ``` r
