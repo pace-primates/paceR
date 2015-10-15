@@ -1,19 +1,19 @@
 #' Calculate fruit availability indices using different methods.
 #'
 #' @param pheno The data frame of phenology data from Santa Rosa.
-#' @param method Either "raw", "loess", or "gam. The default is "raw".
+#' @param smooth Either "none", "loess", or "gam. The default is "none".
 #'
 #' @export
 #' @examples
-#' indices_lo <- pheno_fruit_indices_sr(pheno, method = "loess")
-pheno_fruit_indices_sr <- function(pheno = NULL, method = "raw", ...){
+#' indices_lo <- pheno_fruit_indices_sr(pheno, smooth = "loess")
+pheno_fruit_indices_sr <- function(pheno = NULL, smooth = "none", ...){
 
   pheno$year_of <- factor(pheno$year_of)
 
   # Generate list of unique species, for later use
   species <- unique(select(pheno, SpeciesName, SpeciesCode))
 
-  if (method == "raw") {
+  if (smooth == "none") {
 
     res <- pheno %>%
       group_by(SpeciesName, year_of, month_of) %>%
@@ -22,7 +22,7 @@ pheno_fruit_indices_sr <- function(pheno = NULL, method = "raw", ...){
     res$year_of <- factor(res$year_of)
 
   }
-  else if (method == "gam") {
+  else if (smooth == "gam") {
 
     # Years with failed crops
     failed_years <- pheno %>%
@@ -77,7 +77,7 @@ pheno_fruit_indices_sr <- function(pheno = NULL, method = "raw", ...){
 
     res <- gam_pred
   }
-  else if (method == "loess") {
+  else if (smooth == "loess") {
 
     # Years with failed crops
     failed_years <- pheno %>%
@@ -404,8 +404,8 @@ plot_fpv_dbh <- function(fpv) {
     geom_boxplot(width = 0.5, fill = "gray90") +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
     scale_y_continuous(trans = 'log10',
-                       breaks = trans_breaks('log10', function(x) 10 ^ x),
-                       labels = trans_format('log10', math_format(10 ^ .x))) +
+                       breaks = scales::trans_breaks('log10', function(x) 10 ^ x),
+                       labels = scales::trans_format('log10', math_format(10 ^ .x))) +
     coord_flip() +
     labs(x = "Species\n", y = "\nDBH") +
     theme_bw()
@@ -467,19 +467,20 @@ biomass_avail_sr <- function(biomass_max = NULL, indices = NULL) {
 #' @export
 #' @examples
 #' plot_biomass_species(biomass_avail_lo)
-plot_biomass_species <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, "YlGnBu"))) {
+plot_biomass_species <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer::brewer.pal(9, "YlGnBu"))) {
 
   p <- ggplot(df, aes(x = month_of, y = year_of, fill = biomass_monthly_kg)) +
     geom_tile(color = "gray50") +
     scale_fill_gradientn(colours = fill_col,
-                         trans = sqrt_trans(),
+                         trans = scales::sqrt_trans(),
                          name = "Fruit biomass (kg / ha)") +
     facet_wrap(~SpeciesName, nrow = 5) +
     theme_minimal() +
     theme(legend.position = "bottom",
           strip.background = element_blank(),
+          panel.grid = element_blank(),
           axis.text.x = element_text(angle = 90, vjust = 0.5),
-          legend.key.width = unit(2.5, "cm")) +
+          legend.key.width = grid::unit(2.5, "cm")) +
     labs(title = "Available Fruit Biomass\n", x = "\nMonth", y = "Year\n")
 
   return(p)
@@ -516,7 +517,7 @@ biomass_monthly_summary <- function(df = NULL) {
 #' @export
 #' @examples
 #' plot_biomass(biomass_summary_lo)
-plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9, "YlGnBu"))) {
+plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer::brewer.pal(9, "YlGnBu"))) {
 
   lim <- max(df$total_biomass)
 
@@ -528,8 +529,9 @@ plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9
     theme_minimal() +
     theme(legend.position = "bottom",
           strip.background = element_blank(),
+          panel.grid = element_blank(),
           axis.text.x = element_text(angle = 90, vjust = 0.5),
-          legend.key.width = unit(2.5, "cm")) +
+          legend.key.width = grid::unit(2.5, "cm")) +
     labs(title = "Available Fruit Biomass by Month and Year\n",
          x = "\nMonth", y = "Year\n")
 
@@ -545,19 +547,19 @@ plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9
 #' @param tr Dataframe of raw PACE transect data.
 #' @param fpv Dataframe of FPV data (from CSV file).
 #' @param exclude_species A character vector of species codes to exclude.
-#' @param method Either "raw", "loess", or "gam. The default is "raw".
+#' @param smooth Either "none", "loess", or "gam. The default is "none".
 #'
 #' @export
 #' @examples
 #' exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU", "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
-#' biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, method = "loess")
-get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "", method = "raw") {
+#' biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "loess")
+get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "", smooth = "none") {
 
   # Only work with Santa Rosa data
   pheno <- pheno_prep_fruit_sr(ph, exclude_species)
 
   # Calculate fruit availability indices
-  indices <- pheno_fruit_indices_sr(pheno, method = method)
+  indices <- pheno_fruit_indices_sr(pheno, smooth = smooth)
 
   # Get relevant FPV data corresponding to pheno species
   fpv <- fpv_subset_pheno_sr(fpv, pheno)

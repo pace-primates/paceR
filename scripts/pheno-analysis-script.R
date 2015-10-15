@@ -1,14 +1,8 @@
 library(paceR)
 Sys.setenv(TZ = 'UTC')
-list.of.packages <- list("mgcv", "grid", "scales", "RColorBrewer",
-                         "ggplot2", "paceR")
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if (length(new.packages)) install.packages(unlist(new.packages))
-lapply(list.of.packages, require, character.only = T)
 
 load_pace_packages()
 
-source('~/Github/paceR/R/pheno-functions.R')
 system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
 paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
@@ -28,9 +22,9 @@ exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU",
                     "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
 
 # Calcuate available biomass using the indices as weights
-biomass_avail_raw <- get_biomass_sr(ph, tr, fpv, exclude_species, method = "raw")
-biomass_avail_gam <- get_biomass_sr(ph, tr, fpv, exclude_species, method = "gam")
-biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, method = "loess")
+biomass_avail_raw <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "none")
+biomass_avail_gam <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "gam")
+biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "loess")
 
 
 # Individual species plots of biomass
@@ -51,11 +45,11 @@ plot_biomass_monthly(b_summary_lo)
 
 
 # Side by side plot
-b_summary_raw$method <- "raw"
+b_summary_raw$method <- "none"
 b_summary_gam$method <- "gam"
 b_summary_lo$method <- "loess"
 temp <- bind_rows(b_summary_raw, b_summary_lo, b_summary_gam)
-temp$method <- factor(temp$method, levels = c("raw", "loess", "gam"))
+temp$method <- factor(temp$method, levels = c("none", "loess", "gam"))
 plot_biomass_monthly(temp) + facet_wrap(~method)
 
 
@@ -67,9 +61,9 @@ plot_biomass_monthly(temp) + facet_wrap(~method)
 pheno <- pheno_prep_fruit_sr(ph, exclude_species)
 
 # Calculate fruit availability indices
-indices_raw <- pheno_fruit_indices_sr(pheno, method = "raw")
-indices_gam <- pheno_fruit_indices_sr(pheno, method = "gam")
-indices_lo <- pheno_fruit_indices_sr(pheno, method = "loess")
+indices_raw <- pheno_fruit_indices_sr(pheno, smooth = "none")
+indices_gam <- pheno_fruit_indices_sr(pheno, smooth = "gam")
+indices_lo <- pheno_fruit_indices_sr(pheno, smooth = "loess")
 
 # Plot indices
 plot_pheno_indices(indices_raw)
