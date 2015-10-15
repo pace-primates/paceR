@@ -5,7 +5,7 @@
 \title{Calculate available biomass. This function is a wrapper for most of the other phenology functions.}
 \usage{
 get_biomass_sr(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "",
-  method = "raw")
+  smooth = "none")
 }
 \arguments{
 \item{ph}{Dataframe of raw PACE phenology data.}
@@ -16,13 +16,13 @@ get_biomass_sr(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "",
 
 \item{exclude_species}{A character vector of species codes to exclude.}
 
-\item{method}{Either "raw", "loess", or "gam. The default is "raw".}
+\item{smooth}{Either "none", "loess", or "gam. The default is "none".}
 }
 \description{
 Calculate available biomass. This function is a wrapper for most of the other phenology functions.
 }
 \examples{
 exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU", "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
-biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, method = "loess")
+biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "loess")
 }
 

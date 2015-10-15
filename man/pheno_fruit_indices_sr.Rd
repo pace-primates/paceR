@@ -4,17 +4,17 @@
 \alias{pheno_fruit_indices_sr}
 \title{Calculate fruit availability indices using different methods.}
 \usage{
-pheno_fruit_indices_sr(pheno = NULL, method = "raw", ...)
+pheno_fruit_indices_sr(pheno = NULL, smooth = "none", ...)
 }
 \arguments{
 \item{pheno}{The data frame of phenology data from Santa Rosa.}
 
-\item{method}{Either "raw", "loess", or "gam. The default is "raw".}
+\item{smooth}{Either "none", "loess", or "gam. The default is "none".}
 }
 \description{
 Calculate fruit availability indices using different methods.
 }
 \examples{
-indices_lo <- pheno_fruit_indices_sr(pheno, method = "loess")
+indices_lo <- pheno_fruit_indices_sr(pheno, smooth = "loess")
 }
 

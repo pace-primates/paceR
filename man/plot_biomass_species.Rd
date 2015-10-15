@@ -4,8 +4,8 @@
 \alias{plot_biomass_species}
 \title{Generate a heatmap of availability fruit biomass for each species.}
 \usage{
-plot_biomass_species(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9,
-  "YlGnBu")))
+plot_biomass_species(df = NULL, fill_col = c("#FFFFFF",
+  RColorBrewer::brewer.pal(9, "YlGnBu")))
 }
 \arguments{
 \item{df}{The data frame of biomass data created by biomass_avail_sr.}

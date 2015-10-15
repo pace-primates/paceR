@@ -4,8 +4,8 @@
 \alias{plot_biomass_monthly}
 \title{Heatmap plots of total monthly biomass with species combined}
 \usage{
-plot_biomass_monthly(df = NULL, fill_col = c("#FFFFFF", brewer.pal(9,
-  "YlGnBu")))
+plot_biomass_monthly(df = NULL, fill_col = c("#FFFFFF",
+  RColorBrewer::brewer.pal(9, "YlGnBu")))
 }
 \arguments{
 \item{df}{Dataframe of summarized available biomass data created by biomass_monthly_summary.}
