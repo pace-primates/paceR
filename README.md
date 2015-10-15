@@ -193,4 +193,4 @@ Tutorials for specific kinds of data
 ------------------------------------
 
 -   [Phenology](Phenology.md)
--   [Fruit Biomass for Santa Rosa](BiomassSRgi.md)
+-   [Fruit Biomass for Santa Rosa](BiomassSR.md)
