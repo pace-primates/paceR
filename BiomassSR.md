@@ -65,8 +65,8 @@ We can look at some of the values...
 
 ``` r
 biomass_avail_raw %>% select(SpeciesName, year_of, month_of, biomass_monthly_kg)
-#> Source: local data frame [3,398 x 4]
-#> Groups: SpeciesName, year_of [301]
+#> Source: local data frame [3,435 x 4]
+#> Groups: SpeciesName, year_of [305]
 #> 
 #>         SpeciesName year_of month_of biomass_monthly_kg
 #>               (chr)  (fctr)   (fctr)              (dbl)
