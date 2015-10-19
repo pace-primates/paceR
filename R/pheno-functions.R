@@ -362,7 +362,7 @@ transect_subset_sr <- function(tr = NULL, pheno = NULL, min_dbh = NULL) {
   # Fill in fixed DBH for bromeliads, since it is not recorded
   # Using 5 cm per fruiting plant
   # Also ensure that each has a positive n_stems
-  tr_pheno %>%
+  tr_pheno <- tr_pheno %>%
     mutate(Dbh = ifelse(CodeName %in% c("BPLU", "BPIN"), 5, Dbh))
 
   # Group by TreeID and calculate virtual DBH
