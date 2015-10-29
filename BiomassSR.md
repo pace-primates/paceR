@@ -35,7 +35,7 @@ Then we can get the required data:
 
 ``` r
 # Use special phenology query
-ph <- getv_Phenology(paceR_db)
+ph <- getv_Phenology(paceR_db, project = "SR")
 # No special transect query, so just get raw table
 tr <- get_pace_tbl(paceR_db, "vVegetationTransect")
 # Read in FPV file (not currently in PACE!)
