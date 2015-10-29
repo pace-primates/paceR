@@ -53,13 +53,33 @@ getv_Individual <- function(paceR_db, full = TRUE){
 #'
 #' @param paceR_db The src_mysql connection to the paceR Database.
 #' @param full Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.
+#' @param Project Option to return only a subset of phenology data. Valid values include:
+#' \itemize{
+#' \item "GH" for Ghana (BFMS)
+#' \item "MG" for Madagascar
+#' \item "MR" for Monkey River
+#' \item "RC" for Runaway Creek
+#' \item "SR" for Santa Rosa
+#' }
 #'
 #' @export
 #' @examples
-#' getv_Phenology(paceR_db)
-getv_Phenology <- function(paceR_db, full = TRUE){
+#' getv_Phenology(paceR_db, project = "SR")
+getv_Phenology <- function(paceR_db, full = TRUE, project = ""){
 
-  p <- get_pace_tbl(paceR_db, "vPhenology")
+  if (!(all(project %in% c("GH", "MG", "MR", "RC", "SR")))) {
+    missing <- project[which(!(project %in% c("GH", "MG", "MR", "RC", "SR")))]
+    message("Unknown projects: ", paste(missing, collapse = ", "))
+  }
+
+  if (project != "") {
+    p <- get_pace_tbl(paceR_db, "vPhenology", collect = FALSE) %>%
+      filter(Project %in% project) %>%
+      collect()
+  }
+  else {
+    p <- get_pace_tbl(paceR_db, "vPhenology")
+  }
 
   p <- p %>%
     mutate_each(funs(as.Date), contains("Date"))
@@ -132,19 +152,19 @@ getv_AlphaFemaleTenure <- function(paceR_db, full = TRUE){
 #' @examples
 #' getv_DominanceHierarchy(paceR_db)
 getv_DominanceHierarchy <- function(paceR_db, full = TRUE){
-  
+
   hierarchy <- get_pace_tbl(paceR_db, "vDominanceHierarchy") %>%
     select(DominanceHierarchyID, SpeciesCommonName, GroupName, GroupCode, HierarchyDateStart,
-           HierarchyDateEnd, HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments) %>% 
-    mutate_each(funs(as.Date), contains("Date"), DateOfBirth) %>% 
+           HierarchyDateEnd, HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments) %>%
+    mutate_each(funs(as.Date), contains("Date"), DateOfBirth) %>%
     arrange(GroupCode, HierarchyDateStart, Rank)
-  
+
 
   if (!full) {
     hierarchy <- hierarchy %>%
       select(GroupCode, HierarchyDateStart, HierarchyDateEnd,
              HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments)
-    # sorted out: DominanceHierarchyID, SpeciesCommonName, GroupName, 
+    # sorted out: DominanceHierarchyID, SpeciesCommonName, GroupName,
   }
   return(hierarchy)
 }
