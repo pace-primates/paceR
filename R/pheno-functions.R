@@ -626,25 +626,11 @@ vector.averaging <-  function(direction, distance, deg = TRUE) {
       Ve <- sum(distance * sin(direction)) / n
       Vn <- sum(distance * cos(direction)) / n
       UV <- sqrt(Ve ^ 2 + Vn ^ 2)
-      AV1 <- atan(Ve / Vn)
+      AV <- atan2(Ve, Vn)
+
+      AV[AV < 0] <- AV + 2 * pi
 
       #perform some checks and correct when output in wrong quadrant
-      AV <- NULL
-      if (Ve >= 0 & Vn >= 0) {
-        AV <- AV1
-      }
-      else if (Ve >= 0 & Vn < 0) {
-        AV <- pi - AV1
-      }
-      else if (Ve < 0 & Vn < 0) {
-        AV <- AV1 + pi
-      }
-      else if (Ve < 0 & Vn >= 0) {
-        AV <- 2 * pi - AV1
-      }
-      else{
-        AV <- NULL
-      }
       if (is.null(AV)) {
         return(list(distance = NA,direction = NA))
       } else {
