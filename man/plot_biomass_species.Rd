@@ -2,7 +2,7 @@
 % Please edit documentation in R/pheno-functions.R
 \name{plot_biomass_species}
 \alias{plot_biomass_species}
-\title{Generate a heatmap of availability fruit biomass for each species.}
+\title{Generate a heatmap of availabile fruit biomass for each species.}
 \usage{
 plot_biomass_species(df = NULL, fill_col = c("#FFFFFF",
   RColorBrewer::brewer.pal(9, "YlGnBu")))
@@ -13,7 +13,7 @@ plot_biomass_species(df = NULL, fill_col = c("#FFFFFF",
 \item{fill_col}{A color palette for the fill gradient.}
 }
 \description{
-Generate a heatmap of availability fruit biomass for each species.
+Generate a heatmap of availabile fruit biomass for each species.
 }
 \examples{
 plot_biomass_species(biomass_avail_lo)
