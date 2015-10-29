@@ -67,14 +67,13 @@ getv_Individual <- function(paceR_db, full = TRUE){
 #' getv_Phenology(paceR_db, project = "SR")
 getv_Phenology <- function(paceR_db, full = TRUE, project = ""){
 
-  if (!(all(project %in% c("GH", "MG", "MR", "RC", "SR")))) {
-    missing <- project[which(!(project %in% c("GH", "MG", "MR", "RC", "SR")))]
-    stop("Unknown projects: ", paste(missing, collapse = ", "))
+  if (length(project) > 1 | !(project %in% c("GH", "MG", "MR", "RC", "SR", ""))) {
+    stop("Invalid project.")
   }
 
   if (project != "") {
     p <- get_pace_tbl(paceR_db, "vPhenology", collect = FALSE) %>%
-      filter(Project %in% project) %>%
+      filter(Project == project) %>%
       collect()
   }
   else {
