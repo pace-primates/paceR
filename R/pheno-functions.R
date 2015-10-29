@@ -601,7 +601,19 @@ get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "
 
 }
 
-# Based on function in SDMTools, but fixes problem with incorrect quadrants
+#' Calculate mean resultant vector from directional data, weighted by magnitudes
+#' Based on function in SDMTools, but fixes problem with incorrect quadrants
+#'
+#' @param direction a vector of directions given in degrees (0 - 360) if
+#' \code{deg}==TRUE or in radians if \code{deg}==FALSE
+#' @param distance a vector of distances associated with each direction
+#' @param deg a boolean object defining if \code{direction} is in degrees
+#' (TRUE) or radians (FALSE)
+#'
+#' @export
+#' @examples
+#' vector.averaging(c(10,20,70,78,108), distance=10)
+#' vector.averaging(c(159,220,258,273,310),distance=runif(5))
 vector.averaging <-  function(direction, distance, deg = TRUE) {
   if (deg) direction = direction * pi / 180 #convert to radians
   n <- length(direction) #get the length of direction vector
