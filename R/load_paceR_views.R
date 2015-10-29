@@ -69,7 +69,7 @@ getv_Phenology <- function(paceR_db, full = TRUE, project = ""){
 
   if (!(all(project %in% c("GH", "MG", "MR", "RC", "SR")))) {
     missing <- project[which(!(project %in% c("GH", "MG", "MR", "RC", "SR")))]
-    message("Unknown projects: ", paste(missing, collapse = ", "))
+    stop("Unknown projects: ", paste(missing, collapse = ", "))
   }
 
   if (project != "") {
