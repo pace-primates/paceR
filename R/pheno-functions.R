@@ -1,12 +1,91 @@
-#' Calculate fruit availability indices using different methods.
+#' Convert a Santa Rosa phenology table from long to wide format and prepare for fruit biomass calculation.
+#'
+#' @param pheno The data frame of phenology data from Santa Rosa.
+#' @param exclude_species A character vector of species codes to exclude.
+#' @param item The food part to focus on. Default is "Fruit".
+#' @param maturity Maturity of the food part to focus on. Default is "Mature". Only other valid option is "Immature".
+#'
+#' @export
+#' @examples
+#' pheno <- pheno_prep_sr(ph, exclude_species = c("SPAV", "FUNK"))
+pheno_prep_sr <- function(pheno = NULL, exclude_species = "", item = "Fruit",
+                          maturity = "Mature", ...){
+
+  if (length(item) > 1 | !(item %in% c("Fruit", "Flower", "Leaf"))) {
+    stop("Unknown food items. Valid values include 'Fruit', 'Flower', and 'Leaf'.")
+  }
+
+  if (length(maturity) > 1 | !(maturity %in% c("Mature", "Immature"))) {
+    stop("Unknown maturity value. Valid values are 'Mature' and 'Immature'.")
+  }
+
+  # Retain only records related to fruit
+  pheno <- pheno %>% filter(FoodPart == item)
+
+  pheno$FoodPart <- "Item"
+
+  # Discard irrelevant columns
+  pheno <- pheno %>% select(-PhenologyPercent, -PhenologyCount, -ScientificName,
+                            -RecordDate, -ResearcherName, -Comments, -SiteName)
+
+  # New useful columns
+  pheno <- pheno %>%
+    mutate(year_of = year(PhenologyDate),
+           month_of = month(PhenologyDate))
+
+  # Exclude 2006 pheno data because no maturity info
+  pheno <- pheno %>% filter(year_of > 2006)
+
+  pheno$month_of <- factor(pheno$month_of, labels = month.abb[1:12])
+
+  # First unite the "FoodPart" and "Measurement" columns
+  ph_wide <- pheno %>% unite(FoodPartMeasurement, c(FoodPart, Measurement))
+
+  # Now spread PhenologyScore using FoodPartMeasurement as the key
+  ph_wide <- ph_wide %>% spread(FoodPartMeasurement, PhenologyScore)
+
+  # Fix maturity code 5 (change to zero)
+  ph_wide[which(ph_wide$Item_Maturity == 5), ]$Item_Maturity <- 0
+
+  if (maturity == "Mature") {
+    ph_wide <- ph_wide %>%
+      mutate_each(funs(as.numeric), Item_Cover, Item_Maturity) %>%
+      mutate(index_avail = (Item_Cover / 4) * (Item_Maturity / 4)) %>%
+      filter(!is.na(index_avail))
+  }
+  else if (maturity == "Immature") {
+    ph_wide <- ph_wide %>%
+      mutate_each(funs(as.numeric), Item_Cover, Item_Maturity) %>%
+      mutate(index_avail = (Item_Cover / 4) * ((4 - Item_Maturity) / 4)) %>%
+      filter(!is.na(index_avail))
+  }
+
+  pheno <- ph_wide %>% select(-Item_Cover, -Item_Maturity)
+
+  # Remove any species for which there aren't 12 months of data
+  remove_species <- pheno %>%
+    group_by(SpeciesCode) %>%
+    distinct(month_of) %>%
+    summarise(n = n()) %>%
+    filter(n < 12 | SpeciesCode %in% exclude_species)
+
+  pheno <- pheno %>%
+    filter(!(SpeciesCode %in% remove_species$SpeciesCode))
+
+  return(pheno)
+
+}
+
+
+#' Calculate  availability indices for Santa Rosa using different methods.
 #'
 #' @param pheno The data frame of phenology data from Santa Rosa.
 #' @param smooth Either "none", "loess", or "gam. The default is "none".
 #'
 #' @export
 #' @examples
-#' indices_lo <- pheno_fruit_indices_sr(pheno, smooth = "loess")
-pheno_fruit_indices_sr <- function(pheno = NULL, smooth = "none", ...){
+#' indices_lo <- pheno_avail_indices_sr(pheno, smooth = "loess")
+pheno_avail_indices_sr <- function(pheno = NULL, smooth = "none", ...){
 
   pheno$year_of <- factor(pheno$year_of)
 
@@ -140,66 +219,6 @@ pheno_fruit_indices_sr <- function(pheno = NULL, smooth = "none", ...){
   res <- inner_join(res, species, by = "SpeciesName")
 
   return(res)
-
-}
-
-#' Convert a Santa Rosa phenology table from long to wide format and prepare for fruit biomass calculation.
-#'
-#' @param pheno The data frame of phenology data from Santa Rosa.
-#' @param exclude_species A character vector of species codes to exclude.
-#'
-#' @export
-#' @examples
-#' pheno <- pheno_prep_fruit_sr(ph, exclude_species = c("SPAV", "FUNK"))
-pheno_prep_fruit_sr <- function(pheno = NULL, exclude_species = "", ...){
-
-  # Get SR data only
-  pheno <- pheno %>% filter(Project == "SR")
-
-  # Retain only records related to fruit
-  pheno <- pheno %>% filter(FoodPart == "Fruit")
-
-  # Discard irrelevant columns
-  pheno <- pheno %>% select(-PhenologyPercent, -PhenologyCount, -ScientificName,
-                            -RecordDate, -ResearcherName, -Comments, -SiteName)
-
-  # New useful columns
-  pheno <- pheno %>%
-    mutate(year_of = year(PhenologyDate),
-           month_of = month(PhenologyDate))
-
-  # Exclude 2006 pheno data because no maturity info
-  pheno <- pheno %>% filter(year_of > 2006)
-
-  pheno$month_of <- factor(pheno$month_of, labels = month.abb[1:12])
-
-  # First unite the "FoodPart" and "Measurement" columns
-  ph_wide <- pheno %>% unite(FoodPartMeasurement, c(FoodPart, Measurement))
-
-  # Now spread PhenologyScore using FoodPartMeasurement as the key
-  ph_wide <- ph_wide %>% spread(FoodPartMeasurement, PhenologyScore)
-
-  # Fix maturity code 5 (change to zero)
-  ph_wide[which(ph_wide$Fruit_Maturity == 5), ]$Fruit_Maturity <- 0
-
-  ph_wide <- ph_wide %>%
-    mutate_each(funs(as.numeric), Fruit_Cover, Fruit_Maturity) %>%
-    mutate(index_avail = (Fruit_Cover / 4) * (Fruit_Maturity / 4)) %>%
-    filter(!is.na(index_avail))
-
-  pheno <- ph_wide %>% select(-Fruit_Cover, -Fruit_Maturity)
-
-  # Remove any species for which there aren't 12 months of data
-  remove_species <- pheno %>%
-    group_by(SpeciesCode) %>%
-    distinct(month_of) %>%
-    summarise(n = n()) %>%
-    filter(n < 12 | SpeciesCode %in% exclude_species)
-
-  pheno <- pheno %>%
-    filter(!(SpeciesCode %in% remove_species$SpeciesCode))
-
-  return(pheno)
 
 }
 
@@ -442,7 +461,7 @@ biomass_max_sr <- function(df = NULL) {
 #' Calcuate available biomass using the indices as weights.
 #'
 #' @param biomass_max Dataframe of max biomass data created by biomass_max_sr
-#' @param indices Index data to use as weights created by pheno_fruit_indices_sr
+#' @param indices Index data to use as weights created by pheno_avail_indices_sr
 #'
 #' @export
 #' @examples
@@ -459,7 +478,7 @@ biomass_avail_sr <- function(biomass_max = NULL, indices = NULL) {
 }
 
 
-#' Generate a heatmap of availability fruit biomass for each species.
+#' Generate a heatmap of availabile fruit biomass for each species.
 #'
 #' @param df The data frame of biomass data created by biomass_avail_sr.
 #' @param fill_col A color palette for the fill gradient.
@@ -556,10 +575,10 @@ plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer
 get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "", smooth = "none") {
 
   # Only work with Santa Rosa data
-  pheno <- pheno_prep_fruit_sr(ph, exclude_species)
+  pheno <- pheno_prep_sr(ph, exclude_species, "Fruit")
 
   # Calculate fruit availability indices
-  indices <- pheno_fruit_indices_sr(pheno, smooth = smooth)
+  indices <- pheno_avail_indices_sr(pheno, smooth = smooth)
 
   # Get relevant FPV data corresponding to pheno species
   fpv <- fpv_subset_pheno_sr(fpv, pheno)
@@ -580,4 +599,48 @@ get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "
 
   return(biomass_avail)
 
+}
+
+# Based on function in SDMTools, but fixes problem with incorrect quadrants
+vector.averaging <-  function(direction, distance, deg = TRUE) {
+  if (deg) direction = direction * pi / 180 #convert to radians
+  n <- length(direction) #get the length of direction vector
+  if (any(is.na(direction))) { #ensure no NA data
+    warning('NAs in data'); pos = which(is.na(direction)); direction = direction[-pos]; distance = distance[-pos]
+  } else {
+    sinr <- sum(sin(direction))
+    cosr <- sum(cos(direction))
+    if (sqrt((sinr ^ 2 + cosr ^ 2))/n > .Machine$double.eps) {
+      Ve <- sum(distance * sin(direction)) / n
+      Vn <- sum(distance * cos(direction)) / n
+      UV <- sqrt(Ve ^ 2 + Vn ^ 2)
+      AV1 <- atan(Ve / Vn)
+
+      #perform some checks and correct when output in wrong quadrant
+      AV <- NULL
+      if (Ve >= 0 & Vn >= 0) {
+        AV <- AV1
+      }
+      else if (Ve >= 0 & Vn < 0) {
+        AV <- pi - AV1
+      }
+      else if (Ve < 0 & Vn < 0) {
+        AV <- AV1 + pi
+      }
+      else if (Ve < 0 & Vn >= 0) {
+        AV <- 2 * pi - AV1
+      }
+      else{
+        AV <- NULL
+      }
+      if (is.null(AV)) {
+        return(list(distance = NA,direction = NA))
+      } else {
+        if (deg) AV = AV * 180 / pi #convert back to degrees
+        return(list(distance = UV, direction = AV))
+      }
+    } else {
+      return(list(distance = NA, direction = NA))
+    }
+  }
 }

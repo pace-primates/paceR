@@ -9,7 +9,7 @@ biomass_avail_sr(biomass_max = NULL, indices = NULL)
 \arguments{
 \item{biomass_max}{Dataframe of max biomass data created by biomass_max_sr}
 
-\item{indices}{Index data to use as weights created by pheno_fruit_indices_sr}
+\item{indices}{Index data to use as weights created by pheno_avail_indices_sr}
 }
 \description{
 Calcuate available biomass using the indices as weights.

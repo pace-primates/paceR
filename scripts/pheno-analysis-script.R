@@ -10,7 +10,7 @@ paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", passwo
 # Get data from PACE
 
 # Use special phenology query
-ph <- getv_Phenology(paceR_db)
+ph <- getv_Phenology(paceR_db, project = "SR")
 # No special transect query, so just get raw table
 tr <- get_pace_tbl(paceR_db, "vVegetationTransect")
 # Read in FPV file (not currently in PACE!)
@@ -58,7 +58,7 @@ plot_biomass_monthly(temp) + facet_wrap(~method)
 # Longer script
 
 # Only work with Santa Rosa data
-pheno <- pheno_prep_fruit_sr(ph, exclude_species)
+pheno <- pheno_prep_sr(ph, exclude_species, "Fruit")
 
 # Calculate fruit availability indices
 indices_raw <- pheno_fruit_indices_sr(pheno, smooth = "none")
