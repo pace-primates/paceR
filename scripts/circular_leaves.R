@@ -1,8 +1,10 @@
+ph <- getv_Phenology(paceR_db, project = "SR")
+
 exclude_species <- c("AEDU", "AOCC", "BPLU", "BPIN", "BUNG", "CGUA", "CPAN",
                      "FUNK", "JPUN", "MARB", "MARG", "MCAL", "PGUA", "RMON",
                      "RTHU", "SPAV", "ACOL")
 
-pheno <- pheno_prep_sr(ph, exclude_species, item = "Leaf", maturity = "Immature")
+pheno <- pheno_prep_sr(ph, exclude_species, item = "Leaf", maturity = "Mature")
 
 indices_lo <- pheno_avail_indices_sr(pheno, smooth = "loess")
 
@@ -25,8 +27,6 @@ ggplot(indices_lo, aes(x = month_of, y = as.numeric(as.character(year_of)), fill
         legend.key.width = grid::unit(2.5, "cm")) +
   labs(x = "Month", y = "Year") +
   coord_polar()
-
-
 
 
 # Vectors
@@ -62,7 +62,7 @@ indices_lo$SpeciesName <- factor(indices_lo$SpeciesName, levels = species)
 ggplot(temp, aes(x = direction, xend = direction, y = new_dist, yend = 2000)) +
   geom_segment() +
   coord_polar() +
-  scale_x_continuous(limits = c(0, 360)) +
+  scale_x_continuous(limits = c(0, 360), breaks = seq(0, 360, by = 30)) +
   scale_y_continuous(limits = c(2000, 2016)) +
   facet_wrap(~SpeciesName, ncol = 7) +
   theme_minimal() +
@@ -70,7 +70,9 @@ ggplot(temp, aes(x = direction, xend = direction, y = new_dist, yend = 2000)) +
         strip.background = element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
-        panel.grid = element_blank()) +
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank()) +
   labs(x = "Month", y = "Year")
 
 
@@ -85,65 +87,81 @@ ggplot(indices_lo, aes(x = month_of, y = as.numeric(as.character(year_of)), fill
   theme_minimal() +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
-        panel.grid.major.y = element_blank(),
+        panel.grid = element_blank(),
         legend.key.width = grid::unit(2.5, "cm")) +
   labs(x = "Month", y = "Year") +
   coord_polar()
 
 
+# new_leaf_seas <- temp
+# old_leaf_seas <- temp
+new_leaf_seas$maturity <- "New Leaves"
+old_leaf_seas$maturity <- "Mature Leaves"
 
+leaf_seas <- rbind(new_leaf_seas, old_leaf_seas)
+leaf_seas$mo <- cut(leaf_seas$direction, breaks = seq(0, 360, by = 30),
+                    labels = month.abb)
 
+ggplot(leaf_seas, aes(x = direction, xend = direction, y = distance, yend = 0,
+                      fill = maturity, color = maturity)) +
+  geom_segment(alpha = 0.5) +
+  scale_x_continuous(limits = c(0, 360), breaks = seq(15, 345, by = 30),
+                     minor_breaks = seq(0, 330, by = 30),
+                     labels = c(month.abb)) +
+  scale_color_manual(values = c("#31a354",  "#fec44f"), name = "") +
+  scale_fill_manual(values = c("#31a354", "#fec44f"), name = "") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_line(color = "gray95"),
+        panel.grid.major.x = element_blank()) +
+  labs(y = "Seasonality Index\n", x = "") +
+  coord_polar()
 
-pheno_prep_sr2 <- function(pheno = NULL, exclude_species = "", Item = "Fruit", ...){
+ggplot(leaf_seas, aes(x = mo, fill = maturity, color = maturity)) +
+  geom_vline(xintercept = seq(0.5, 11.5, by = 1), color = "gray95") +
+  geom_bar(alpha = 0.5, position = "identity") +
+  scale_x_discrete(month.abb, drop = FALSE) +
+  scale_color_manual(values = c("#31a354",  "#fec44f"), name = "") +
+  scale_fill_manual(values = c("#31a354", "#fec44f"), name = "") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank()) +
+  labs(x = "", y = "Number of Species in Peak Phenophase\n") +
+  coord_polar()
 
-  # Get SR data only
-  pheno <- pheno %>% filter(Project == "SR")
+ggplot(leaf_seas, aes(x = distance, fill = maturity, color = maturity)) +
+  geom_density(alpha = 0.5) +
+  geom_rug() +
+  scale_color_manual(values = c("#31a354",  "#fec44f"), name = "") +
+  scale_fill_manual(values = c("#31a354", "#fec44f"), name = "") +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank()) +
+  labs(x = "\nSeasonality Index", y = "Density\n")
 
-  # Retain only records related to fruit
-  pheno <- pheno %>% filter(FoodPart == Item)
-
-  pheno$FoodPart <- "Item"
-
-  # Discard irrelevant columns
-  pheno <- pheno %>% select(-PhenologyPercent, -PhenologyCount, -ScientificName,
-                            -RecordDate, -ResearcherName, -Comments, -SiteName)
-
-  # New useful columns
-  pheno <- pheno %>%
-    mutate(year_of = year(PhenologyDate),
-           month_of = month(PhenologyDate))
-
-  # Exclude 2006 pheno data because no maturity info
-  pheno <- pheno %>% filter(year_of > 2006)
-
-  pheno$month_of <- factor(pheno$month_of, labels = month.abb[1:12])
-
-  # First unite the "FoodPart" and "Measurement" columns
-  ph_wide <- pheno %>% unite(FoodPartMeasurement, c(FoodPart, Measurement))
-
-  # Now spread PhenologyScore using FoodPartMeasurement as the key
-  ph_wide <- ph_wide %>% spread(FoodPartMeasurement, PhenologyScore)
-
-  # Fix maturity code 5 (change to zero)
-  ph_wide[which(ph_wide$Item_Maturity == 5), ]$Item_Maturity <- 0
-
-  ph_wide <- ph_wide %>%
-    mutate_each(funs(as.numeric), Item_Cover, Item_Maturity) %>%
-    mutate(index_avail = (Item_Cover / 4) * ((4 - Item_Maturity) / 4)) %>%
-    filter(!is.na(index_avail))
-
-  pheno <- ph_wide %>% select(-Item_Cover, -Item_Maturity)
-
-  # Remove any species for which there aren't 12 months of data
-  remove_species <- pheno %>%
-    group_by(SpeciesCode) %>%
-    distinct(month_of) %>%
-    summarise(n = n()) %>%
-    filter(n < 12 | SpeciesCode %in% exclude_species)
-
-  pheno <- pheno %>%
-    filter(!(SpeciesCode %in% remove_species$SpeciesCode))
-
-  return(pheno)
-
-}
+ggplot(indices_lo, aes(x = month_of, y = as.numeric(as.character(year_of)), fill = avail)) +
+  geom_tile(color = "gray50") +
+  scale_fill_gradientn(colours = c("#FFFFFF", brewer.pal(9, "YlGn")),
+                       # trans = scales::sqrt_trans(),
+                       limits = c(0, 1),
+                       guide = FALSE) +
+  scale_y_continuous(limits = c(2000, 2016)) +
+  facet_wrap(~SpeciesName, ncol = 7) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.key.width = grid::unit(2.5, "cm")) +
+  labs(x = "Month", y = "Year") +
+  coord_polar()
