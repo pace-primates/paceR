@@ -147,6 +147,11 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
     select (-Date)
   ###############
   
+  
+  focal_SC <- focal_SC %>%
+    mutate(BehaviourName = ifelse(BehaviourName == "groom" & Role == "Contact", "groom in contact",
+                                  ifelse(BehaviourName == "groom" & Role == "Proximity", "groom in proximity", BehaviourName)))
+  
   focal_SC <- focal_SC %>%
     select (linenumber, newlinenumber, PrimateSpeciesCommonName,
             SessionBegin, SessionEnd, ContactBegin, ContactEnd,
