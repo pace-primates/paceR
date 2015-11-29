@@ -61,9 +61,9 @@ plot_biomass_monthly(temp) + facet_wrap(~method)
 pheno <- pheno_prep_sr(ph, exclude_species, "Fruit")
 
 # Calculate fruit availability indices
-indices_raw <- pheno_fruit_indices_sr(pheno, smooth = "none")
-indices_gam <- pheno_fruit_indices_sr(pheno, smooth = "gam")
-indices_lo <- pheno_fruit_indices_sr(pheno, smooth = "loess")
+indices_raw <- pheno_avail_indices_sr(pheno, smooth = "none")
+indices_gam <- pheno_avail_indices_sr(pheno, smooth = "gam")
+indices_lo <- pheno_avail_indices_sr(pheno, smooth = "loess")
 
 # Plot indices
 plot_pheno_indices(indices_raw)
