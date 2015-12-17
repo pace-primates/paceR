@@ -123,7 +123,7 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
     ungroup
   
   getAC <- function (Name, Date) {
-    AC <- partnerAC [partnerAC$NameOf == Name & Date %within% new_interval(partnerAC$FirstDateAC, partnerAC$LeftAC), ]$CensusAgeClass
+    AC <- partnerAC [partnerAC$NameOf == Name & Date %within% interval(partnerAC$FirstDateAC, partnerAC$LeftAC), ]$CensusAgeClass
     AC <- ifelse (grepl ("Juv", Name), "Juvenile",
                   ifelse (grepl ("Inf", Name), "Infant",
                           ifelse (grepl ("Adult", Name), "Adult", AC)))
