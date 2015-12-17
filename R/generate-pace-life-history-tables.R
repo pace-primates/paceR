@@ -76,7 +76,7 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 }
 
 
-#' Get table with risk of infanticide for infants
+#' Get table with infants including the risk of infanticide
 #' as a consequence of alpha male reversals
 #'
 #' Unstable (i.e. risky) periods start with the end of an alpha alpha male tenureship
@@ -90,9 +90,9 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 #'
 #' @export
 #' @examples
-#' get_infanticide_risk (paceR_db)
+#' get_infant_table (paceR_db)
 
-get_infanticide_risk <- function(paceR_db, full = TRUE, projectID = 1){
+get_infant_table <- function(paceR_db, full = TRUE, projectID = 1){
   
   individuals <- getv_Individual (paceR_db) %>% 
     select (-DayDifference, - Phenotype) %>% 
@@ -212,7 +212,7 @@ get_infanticide_risk <- function(paceR_db, full = TRUE, projectID = 1){
   # Check which infants 1) were born at a risky time and
   # 2) were still presents when the infanticide risk was present (i.e. the tenure of the previous alpha ended)
   # For CP, determine next Alpha and Risk depending on the group they went after the fission
-  infanticide_risk <- infant_biography %>% 
+  infant_table <- infant_biography %>% 
     left_join (birthrisk, by = c("InfantGroupAtBirthCode" = "GroupCode", "InfantDOB" = "RiskDate")) %>%
     # Infants that departed before the infanticide risk was real need to be sorted out
     mutate (InfanticideRisk = ifelse (InfanticideRisk_Start < InfantDepartDate, BirthRisk, "GS")) %>% 
@@ -232,9 +232,9 @@ get_infanticide_risk <- function(paceR_db, full = TRUE, projectID = 1){
 
   # Short version of table
   if(!full){
-    infanticide_risk <- infanticide_risk %>%
+    infant_table <- infant_table %>%
       select (-InfantSex, -Mother, -InfantDateOfConception, -InfantGroupAtBirthName, -Old_AM, -Old_AMT_End)
   }
   
-  return (infanticide_risk)
+  return (infant_table)
 }
