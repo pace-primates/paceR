@@ -122,6 +122,33 @@ get_focaldata_MB <- function(paceR_db, full = TRUE){
              SessionDayID, ProjectID, SubProjectID, ContactID,
              FocalID, FocalStateID, FocalBehaviourID, FocalBehaviourInteractantID)
     
-    }
-  return (focal_MB)
+ }
+ print("Rafiki and RafikiNew are not distinguished --> Check for date of his disappearance replace him by RafikiNew afterwards")
+return (focal_MB)
+}
+
+
+#' Get proximity scans recorded by Mackenzie Bergstrom for her MSc & PhD projects (SubProjectID = 13)
+#' @param paceR_db The src_mysql connection to the paceR Database (view-collection).
+#'
+#' @export
+#' @examples
+#' get_proximity_MB(paceR_db)
+
+get_proximity_MB <- function(paceR_db){
+  
+  prox_MB <- get_pace_tbl(paceR_db, "vProximity", collect = FALSE) %>% 
+    filter (SubProjectID == 13) %>% 
+    # Only use focals with females as focals with males only test-focals
+    filter (Sex == "Female") %>% 
+    # Filter out Focal with "Nymphadora Tonks" --> was focal with unknown female "Tonks" and should be corrected in pacelab
+    filter (NameOf != "Nymphadora Tonks") %>% 
+    collect %>% 
+    select(GroupNameCode, ContactID, FocalID, NameOf, Sex, contains("FocalDate"),
+           FocalProximityID, FocalProximityDateTime, FocalProximityIsInSight,
+           FocalProximityGroupIndividID, ProximityNameOf,
+           ProximitySex, ProximityDOB, DistanceCode) %>% 
+    arrange(FocalProximityDateTime, ProximityNameOf)
+
+  return (prox_MB)
 }
