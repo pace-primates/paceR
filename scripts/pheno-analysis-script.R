@@ -79,7 +79,6 @@ plot_fpv_dbh(fpv)
 # Fix minimum DBHs (currently done manually, need to verify)
 min_dbh <- fpv_get_min_dbh_sr(fpv)
 
-
 # Get relevant transect data corresponding to pheno species
 # Also exclude individual trees that are too small to produce food based on FPVs
 tr_pheno_fpv <- transect_subset_sr(tr, pheno, min_dbh)

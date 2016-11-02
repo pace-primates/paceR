@@ -234,19 +234,21 @@ pheno_avail_indices_sr <- function(pheno = NULL, smooth = "none", ...){
 plot_pheno_indices <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer::brewer.pal(9, "YlGnBu"))){
 
   p <- ggplot(df, aes(x = month_of, y = year_of, fill = avail)) +
-  geom_tile(color = "gray50") +
-  scale_fill_gradientn(colours = fill_col,
-                       trans = scales::sqrt_trans(),
-                       limits = c(0, 1),
-                       name = "Availability Index") +
-  facet_wrap(~SpeciesName, nrow = 5) +
-  theme_minimal() +
-  theme(legend.position = "bottom",
-        strip.background = element_blank(),
-        panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.key.width = grid::unit(2.5, "cm")) +
-  labs(title = "Fruit Availability Indices")
+    geom_tile(color = "gray50") +
+    scale_fill_gradientn(colours = fill_col,
+                         trans = scales::sqrt_trans(),
+                         limits = c(0, 1),
+                         name = "Availability Index") +
+    facet_wrap(~SpeciesName, nrow = 5) +
+    theme_minimal() +
+    theme(legend.position = "bottom",
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x = element_text(angle = 90, vjust = 0.5),
+          legend.key.width = grid::unit(2.5, "cm")) +
+    labs(title = "Fruit Availability Indices") +
+    coord_equal()
+
 
   return(p)
 
@@ -500,7 +502,8 @@ plot_biomass_species <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer
           panel.grid = element_blank(),
           axis.text.x = element_text(angle = 90, vjust = 0.5),
           legend.key.width = grid::unit(2.5, "cm")) +
-    labs(title = "Available Fruit Biomass\n", x = "\nMonth", y = "Year\n")
+    labs(title = "Available Fruit Biomass\n", x = "\nMonth", y = "Year\n") +
+    coord_equal()
 
   return(p)
 
@@ -552,7 +555,8 @@ plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer
           axis.text.x = element_text(angle = 90, vjust = 0.5),
           legend.key.width = grid::unit(2.5, "cm")) +
     labs(title = "Available Fruit Biomass by Month and Year\n",
-         x = "\nMonth", y = "Year\n")
+         x = "\nMonth", y = "Year\n") +
+    coord_equal()
 
   return(p)
 
@@ -585,6 +589,13 @@ get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "
 
   # Fix minimum DBHs (currently done manually, need to verify)
   min_dbh <- fpv_get_min_dbh_sr(fpv)
+
+  # Currently, no min DBH for CGRA due to absence in FPVs
+  # Must set manually
+  min_dbh <- bind_rows(min_dbh,
+                       data.frame(code_name = "CGRA",
+                                  threshold_dbh = 10,
+                                  n_trees = 1))
 
   # Get relevant transect data corresponding to pheno species
   # Also exclude individual trees that are too small to produce food based on FPVs
