@@ -451,11 +451,18 @@ biomass_max_sr <- function(df = NULL) {
     summarise(biomass_total_kg = sum(ProportionOfTreeInTransect * 47 * dbh ^ 1.9) / 1000,
               area_total = sum(abh_total))
 
-  n_transects <- length(unique(df$TransectID))
+  # Account for change in methodology in 2016 that increased transect area from 200 to 400 m^2
+  t_200 <- df[which(lubridate::year(df$DateOf) < 2016), ]
+  t_400 <- df[which(lubridate::year(df$DateOf) >= 2016), ]
 
-  # Biomass per hectare and total basal area (n_transects, each 200 m^2)
+  n_200_transects <- length(unique(t_200$TransectID))
+  n_400_transects <- length(unique(t_400$TransectID))
+
+  transect_area <- ((n_200_transects * 200) + (n_400_transects * 400)) / 10000
+
+  # Biomass per hectare and total basal area
   biomass <- biomass %>%
-    mutate(biomass_max_kg_ha = biomass_total_kg / (n_transects * 200 / 10000))
+    mutate(biomass_max_kg_ha = biomass_total_kg / transect_area)
 
   return(biomass)
 
