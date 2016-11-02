@@ -439,26 +439,18 @@ plot_fpv_dbh <- function(fpv) {
 #' Calculate max potential biomass for each species (if availability were 1).
 #'
 #' @param df Dataframe of data for biomass calculation created by transect_subset_sr
+#' @param transect_area Total area in hectares sampled by transects
 #'
 #' @export
 #' @examples
-#' biomass_max <- biomass_max_sr(tr_pheno_fpv)
-biomass_max_sr <- function(df = NULL) {
+#' biomass_max <- biomass_max_sr(tr_pheno_fpv, transect_area)
+biomass_max_sr <- function(df = NULL, transect_area) {
 
   biomass <- df %>%
     group_by(CodeName) %>%
     filter(usable == TRUE) %>%
     summarise(biomass_total_kg = sum(ProportionOfTreeInTransect * 47 * dbh ^ 1.9) / 1000,
               area_total = sum(abh_total))
-
-  # Account for change in methodology in 2016 that increased transect area from 200 to 400 m^2
-  t_200 <- df[which(lubridate::year(df$DateOf) < 2016), ]
-  t_400 <- df[which(lubridate::year(df$DateOf) >= 2016), ]
-
-  n_200_transects <- length(unique(t_200$TransectID))
-  n_400_transects <- length(unique(t_400$TransectID))
-
-  transect_area <- ((n_200_transects * 200) + (n_400_transects * 400)) / 10000
 
   # Biomass per hectare and total basal area
   biomass <- biomass %>%
@@ -610,9 +602,18 @@ get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "
   # Also exclude individual trees that are too small to produce food based on FPVs
   tr_pheno_fpv <- transect_subset_sr(tr, pheno, min_dbh)
 
+  # Calculate total sampled area
+  # Account for change in methodology in 2016 that increased transect area from 200 to 400 m^2
+  t_200 <- tr[which(lubridate::year(tr$DateOf) < 2016), ]
+  t_400 <- tr[which(lubridate::year(tr$DateOf) >= 2016), ]
+
+  n_200_transects <- length(unique(t_200$TransectID))
+  n_400_transects <- length(unique(t_400$TransectID))
+
+  transect_area <- ((n_200_transects * 200) + (n_400_transects * 400)) / 10000
 
   # Potential peak biomass for each species
-  biomass_max <- biomass_max_sr(tr_pheno_fpv)
+  biomass_max <- biomass_max_sr(tr_pheno_fpv, transect_area)
 
   # Calcuate available biomass using the indices as weights
   biomass_avail <- biomass_avail_sr(biomass_max, indices)
