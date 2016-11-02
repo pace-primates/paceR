@@ -74,7 +74,7 @@ getv_Phenology <- function(paceR_db, full = TRUE, project = ""){
   if (project != "") {
     p <- get_pace_tbl(paceR_db, "vPhenology", collect = FALSE) %>%
       filter(Project == project) %>%
-      collect()
+      collect(n = Inf)
   }
   else {
     p <- get_pace_tbl(paceR_db, "vPhenology")
