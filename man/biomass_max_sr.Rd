@@ -4,15 +4,17 @@
 \alias{biomass_max_sr}
 \title{Calculate max potential biomass for each species (if availability were 1).}
 \usage{
-biomass_max_sr(df = NULL)
+biomass_max_sr(df = NULL, transect_area)
 }
 \arguments{
 \item{df}{Dataframe of data for biomass calculation created by transect_subset_sr}
+
+\item{transect_area}{Total area in hectares sampled by transects}
 }
 \description{
 Calculate max potential biomass for each species (if availability were 1).
 }
 \examples{
-biomass_max <- biomass_max_sr(tr_pheno_fpv)
+biomass_max <- biomass_max_sr(tr_pheno_fpv, transect_area)
 }
 

@@ -18,7 +18,7 @@ get_pace_tbl <- function(pace_db, tbl_name, collect = TRUE){
       select(everything(), -matches("TimeStamp"), -matches("UserAdd"))
 
     if (collect) {
-      return(collect(t1))
+      return(collect(t1, n=Inf))
     }
     else {
      return(t1)
