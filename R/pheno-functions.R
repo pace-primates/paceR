@@ -123,7 +123,9 @@ pheno_avail_indices_sr <- function(pheno = NULL, smooth = "none", ...){
                 n_years = n()) %>%
       filter(monthly_sum == 0 & n_years >= 3)
 
+    # For now, TRAC causes an error, so removing it
     mods2 <- pheno %>%
+      filter(SpeciesCode != "TRAC") %>%
       group_by(SpeciesName) %>%
       do(m = mgcv::gamm(index_avail ~ s(as.numeric(month_of), bs = "cc", k = 13) +
                     year_of,
@@ -189,15 +191,14 @@ pheno_avail_indices_sr <- function(pheno = NULL, smooth = "none", ...){
       c_year <- mods2[i, ]$year_of
       set <- filter(pheno, SpeciesName == c_species & year_of == c_year)
 
-      if (nrow(set) > 10) {
+      if (nrow(set) > 10 & length(unique(set$month_of)) > 2) {
         loess_pred[[i]] <- set %>%
           mutate(avail = predict(c_loess, newdata = set))
       }
       else {
         loess_pred[[i]] <- set %>%
-          mutate(avail = 0)
+          mutate(avail = mean(set$index_avail))
       }
-      # message(i)
     }
 
     loess_pred <- bind_rows(loess_pred)
