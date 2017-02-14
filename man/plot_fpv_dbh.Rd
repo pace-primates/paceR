@@ -15,4 +15,3 @@ Create boxplots of DBHs for trees in FPV data for each species to find size of f
 \examples{
 plot_fpv_dbh(fpv)
 }
-

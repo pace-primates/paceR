@@ -17,4 +17,3 @@ Get focal behaviour recorded by Mackenzie Bergstrom for her MSc & PhD projects (
 \examples{
 get_focaldata_MB(paceR_db)
 }
-

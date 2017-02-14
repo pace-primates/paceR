@@ -26,4 +26,3 @@ Get table with Phenology data
 \examples{
 getv_Phenology(paceR_db, project = "SR")
 }
-

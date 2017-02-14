@@ -15,4 +15,3 @@ Summarize available biomass data by summing species in each month / year.
 \examples{
 biomass_summary_lo <- biomass_monthly_summary(biomass_avail_lo)
 }
-

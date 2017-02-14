@@ -17,4 +17,3 @@ Calcuate available biomass using the indices as weights.
 \examples{
 biomass_avail_lo <- biomass_avail_sr(biomass_max, indices_lo)
 }
-

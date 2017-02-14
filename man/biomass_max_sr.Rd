@@ -17,4 +17,3 @@ Calculate max potential biomass for each species (if availability were 1).
 \examples{
 biomass_max <- biomass_max_sr(tr_pheno_fpv, transect_area)
 }
-

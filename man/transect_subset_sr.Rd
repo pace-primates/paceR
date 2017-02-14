@@ -21,4 +21,3 @@ Also exclude individual trees that are too small to produce food based on FPVs.
 \examples{
 tr_pheno_fpv <- transect_subset_sr(tr, pheno, min_dbh)
 }
-

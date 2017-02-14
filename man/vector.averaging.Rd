@@ -24,4 +24,3 @@ Based on function in SDMTools, but fixes problem with incorrect quadrants
 vector.averaging(c(10,20,70,78,108), distance=10)
 vector.averaging(c(159,220,258,273,310),distance=runif(5))
 }
-

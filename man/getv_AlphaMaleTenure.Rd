@@ -17,4 +17,3 @@ Get table with alpha male tenures.
 \examples{
 getv_AlphaMaleTenure(paceR_db)
 }
-

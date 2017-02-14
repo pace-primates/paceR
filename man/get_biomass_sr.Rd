@@ -4,8 +4,8 @@
 \alias{get_biomass_sr}
 \title{Calculate available biomass. This function is a wrapper for most of the other phenology functions.}
 \usage{
-get_biomass_sr(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "",
-  smooth = "none")
+get_biomass_sr(ph = NULL, tr = NULL, fpv = NULL, figs = NULL,
+  exclude_species = "", smooth = "none")
 }
 \arguments{
 \item{ph}{Dataframe of raw PACE phenology data.}
@@ -25,4 +25,3 @@ Calculate available biomass. This function is a wrapper for most of the other ph
 exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU", "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
 biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "loess")
 }
-

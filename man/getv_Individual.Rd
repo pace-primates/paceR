@@ -17,4 +17,3 @@ Get table with Individual data
 \examples{
 getv_Individual(paceR_db)
 }
-

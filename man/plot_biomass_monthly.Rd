@@ -18,4 +18,3 @@ Heatmap plots of total monthly biomass with species combined
 \examples{
 plot_biomass(biomass_summary_lo)
 }
-

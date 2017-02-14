@@ -12,4 +12,3 @@ load_pace_packages(...)
 \examples{
 load_pace_packages()
 }
-

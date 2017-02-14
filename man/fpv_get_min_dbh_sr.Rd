@@ -15,4 +15,3 @@ Set minimum DBHs for fruit-producing trees of each species.
 \examples{
 min_dbh <- fpv_get_min_dbh_sr(fpv)
 }
-

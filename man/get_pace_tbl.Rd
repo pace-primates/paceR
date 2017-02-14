@@ -21,4 +21,3 @@ Note that the foreign key IDs are not matched to their readable equivalents.
 \examples{
 get_pace_tbl(pace_db, "tblGroup")
 }
-

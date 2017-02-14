@@ -15,4 +15,3 @@ Get proximity scans recorded by Mackenzie Bergstrom for her MSc & PhD projects (
 \examples{
 get_proximity_MB(paceR_db)
 }
-

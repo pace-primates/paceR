@@ -17,4 +17,3 @@ Get focal behaviour recorded by Sarah Carnegie's for her PhD project (SubProject
 \examples{
 get_focaldata_SC(paceR_db)
 }
-

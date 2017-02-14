@@ -18,4 +18,3 @@ Generate a heatmap of availabile fruit biomass for each species.
 \examples{
 plot_biomass_species(biomass_avail_lo)
 }
-

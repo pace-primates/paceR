@@ -17,4 +17,3 @@ Calculate  availability indices for Santa Rosa using different methods.
 \examples{
 indices_lo <- pheno_avail_indices_sr(pheno, smooth = "loess")
 }
-

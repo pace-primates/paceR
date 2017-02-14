@@ -23,4 +23,3 @@ This does not count for infants conceived after the takeover
 \examples{
 get_infant_table (paceR_db)
 }
-

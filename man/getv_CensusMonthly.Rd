@@ -17,4 +17,3 @@ Get table with group-census data
 \examples{
 getv_CensusMonthly(paceR_db)
 }
-

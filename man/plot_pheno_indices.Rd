@@ -18,4 +18,3 @@ Generate a heatmap of fruit availability indices.
 \examples{
 plot_pheno_indices(indices_lo)
 }
-

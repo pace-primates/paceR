@@ -22,4 +22,3 @@ Convert a Santa Rosa phenology table from long to wide format and prepare for fr
 \examples{
 pheno <- pheno_prep_sr(ph, exclude_species = c("SPAV", "FUNK"))
 }
-

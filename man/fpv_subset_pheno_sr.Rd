@@ -17,4 +17,3 @@ Get relevant FPV data corresponding to pheno species
 \examples{
 fpv <- fpv_subset_pheno_sr(fpv, pheno)
 }
-

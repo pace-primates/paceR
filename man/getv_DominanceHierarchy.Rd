@@ -17,4 +17,3 @@ Get table with Dominance hierachies.
 \examples{
 getv_DominanceHierarchy(paceR_db)
 }
-

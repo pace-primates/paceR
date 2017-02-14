@@ -19,4 +19,3 @@ Get table with biography from birth until death, disappearance or end of observa
 \examples{
 get_biography(paceR_db)
 }
-
