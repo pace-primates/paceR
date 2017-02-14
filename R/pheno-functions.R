@@ -123,9 +123,7 @@ pheno_avail_indices_sr <- function(pheno = NULL, smooth = "none", ...){
                 n_years = n()) %>%
       filter(monthly_sum == 0 & n_years >= 3)
 
-    # For now, TRAC causes an error, so removing it
     mods2 <- pheno %>%
-      filter(SpeciesCode != "TRAC") %>%
       group_by(SpeciesName) %>%
       do(m = mgcv::gamm(index_avail ~ s(as.numeric(month_of), bs = "cc", k = 13) +
                     year_of,
@@ -191,6 +189,7 @@ pheno_avail_indices_sr <- function(pheno = NULL, smooth = "none", ...){
       c_year <- mods2[i, ]$year_of
       set <- filter(pheno, SpeciesName == c_species & year_of == c_year)
 
+      # If fewer than 2 months in a given year, set to mean value
       if (nrow(set) > 10 & length(unique(set$month_of)) > 2) {
         loess_pred[[i]] <- set %>%
           mutate(avail = predict(c_loess, newdata = set))
@@ -279,7 +278,7 @@ fpv_subset_pheno_sr <- function(fpv = NULL, pheno = NULL) {
     mutate(dbh = ifelse(Code %in% c("BPLU", "BPIN"), 5, dbh),
            NFruiting = ifelse(Code %in% c("BPLU", "BPIN") & is.na(NFruiting),
                               1, NFruiting),
-           dbh = ifelse(Code %in% c("BPLU", "BPIN"), dbh* NFruiting, dbh))
+           dbh = ifelse(Code %in% c("BPLU", "BPIN"), dbh * NFruiting, dbh))
 
   # Remove NA values and extra columns, because not useful here
   fpv <- fpv %>%
@@ -399,13 +398,14 @@ transect_subset_sr <- function(tr = NULL, pheno = NULL, min_dbh = NULL) {
     ungroup() %>%
     filter(!is.na(dbh))
 
+  # Join to get min_dbh
+  tr_pheno <- left_join(tr_pheno,
+                        select(min_dbh, CodeName = code_name, threshold_dbh),
+                        by = "CodeName")
+
   # Set "usable" flag to indicate if tree dbh >= threshold
-  tr_pheno$usable <- FALSE
-  for (i in 1:nrow(tr_pheno)) {
-    tr_pheno[i, ]$usable <- tr_pheno[i, ]$dbh >=
-      (min_dbh[which(as.character(min_dbh$code_name) ==
-                       as.character(tr_pheno[i, ]$CodeName)),]$threshold_dbh)
-  }
+  tr_pheno <- tr_pheno %>%
+    mutate(usable = dbh >= threshold_dbh)
 
   return(tr_pheno)
 
@@ -564,8 +564,6 @@ plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer
 
 }
 
-
-
 #' Calculate available biomass. This function is a wrapper for most of the other phenology functions.
 #'
 #' @param ph Dataframe of raw PACE phenology data.
@@ -578,7 +576,7 @@ plot_biomass_monthly <- function(df = NULL, fill_col = c("#FFFFFF", RColorBrewer
 #' @examples
 #' exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU", "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
 #' biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "loess")
-get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "", smooth = "none") {
+get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, figs = NULL, exclude_species = "", smooth = "none") {
 
   # Only work with Santa Rosa data
   pheno <- pheno_prep_sr(ph, exclude_species, "Fruit")
@@ -594,10 +592,10 @@ get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "
 
   # Currently, no min DBH for CGRA due to absence in FPVs
   # Must set manually
-  min_dbh <- bind_rows(min_dbh,
+  min_dbh <- suppressWarnings(bind_rows(min_dbh,
                        data.frame(code_name = "CGRA",
                                   threshold_dbh = 10,
-                                  n_trees = 1))
+                                  n_trees = 1)))
 
   # Get relevant transect data corresponding to pheno species
   # Also exclude individual trees that are too small to produce food based on FPVs
@@ -618,6 +616,43 @@ get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, exclude_species = "
 
   # Calcuate available biomass using the indices as weights
   biomass_avail <- biomass_avail_sr(biomass_max, indices)
+
+  if (!is.null(figs)) {
+
+    biomass_avail <- biomass_avail %>%
+      filter(!str_detect(SpeciesName, "Ficus"))
+
+    # Monthly availability indices for all phenology fig species
+    fig_indices <- indices %>%
+      filter(str_detect(SpeciesName, "Ficus"))
+
+    # Actual fig data, one row per tree
+    # Calculate max biomass per tree
+    fig_data <- figs %>%
+      filter(!is.na(VirtualFicusCBH)) %>%
+      mutate(dbh = VirtualFicusCBH / pi,
+             biomass_tree_max_kg = (47 * dbh ^ 1.9) / 1000)
+
+    # Join tree data to indices
+    # One row per tree per pheno month
+    fig_data <- suppressWarnings(inner_join(fig_indices,
+                                            fig_data, by = "SpeciesCode"))
+
+    # Sum of max biomass per species
+    # Add up max biomass of each tree
+    # HARD CODED VALUE: Fig sampling area 791 ha
+    fig_biomass_max <- fig_data %>%
+      ungroup() %>%
+      group_by(SpeciesName, year_of, month_of, avail, SpeciesCode) %>%
+      summarise(biomass_total_kg = sum(biomass_tree_max_kg),
+                biomass_max_kg_ha = biomass_total_kg / 791)
+
+    # Available
+    fig_biomass_avail <- fig_biomass_max %>%
+      mutate(biomass_monthly_kg = biomass_max_kg_ha * avail)
+
+    biomass_avail <- bind_rows(biomass_avail, fig_biomass_avail)
+  }
 
   return(biomass_avail)
 

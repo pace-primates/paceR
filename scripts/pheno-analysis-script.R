@@ -16,15 +16,20 @@ tr <- get_pace_tbl(paceR_db, "vVegetationTransect")
 # Read in FPV file (not currently in PACE!)
 fpv <- tbl_df(read.csv("data/AllFPV.csv"))
 
+# Read most recent fig file
+figs <- tbl_df(read.csv("data/FicusData_Nov13_2013.csv"))
+
 
 # Create set of species to exclude
 exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU",
-                    "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
+                    "ATIB", "GULM", "LCAN", "LSPE", "FUNK",
+                    "TRAC")
 
 # Calcuate available biomass using the indices as weights
-biomass_avail_raw <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "none")
-biomass_avail_gam <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "gam")
-biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, exclude_species, smooth = "loess")
+biomass_avail_raw <- get_biomass_sr(ph, tr, fpv, figs, exclude_species, smooth = "none")
+biomass_avail_gam <- get_biomass_sr(ph, tr, fpv, figs, exclude_species, smooth = "gam")
+biomass_avail_lo <- get_biomass_sr(ph, tr, fpv, figs, exclude_species, smooth = "loess")
+
 
 
 # Individual species plots of biomass
