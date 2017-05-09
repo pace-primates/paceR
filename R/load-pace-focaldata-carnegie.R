@@ -10,10 +10,10 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
 
   focal_SC <- get_pace_tbl(paceR_db, "vFocalData", collect = FALSE) %>% 
     filter (SubProjectID == 12) %>% 
+    collect (n = Inf) %>% 
     # filter (Sex == "F") %>% 
-    select (-ResearcherNameLast, -StateSpeciesName, -StateKingdom, -BehaviourClassNameOf, -EndedByBehaviourName) %>% 
-    collect %>% 
-    arrange (FocalStateID, FocalBehaviourID, FocalBehaviourInteractantID) %>% # Can be sorted like this?
+    select (-ResearcherNameLast, -StateSpeciesName, -StateKingdom, -BehavClassNameOf, -EndedByBehavName) %>% 
+    arrange (FocalStateID, FocalBehavID, FocalBehavInteractID) %>% # Can be sorted like this?
     mutate (linenumber = row_number ()) # For controls
   # All sorted out colums are NA
   # not in the view:
@@ -21,35 +21,34 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
 
 #######  
 # Replace Chili by Burrito (the first Chili disappeared in 2003, the Chili in Sarah's data is Burrito in pacelab)
-  # TO DO:
-  # Only temporary solution, this step should be done before importing Sarah's data into pacelab
+  # TO DO: Only temporary solution, this step should be done before importing Sarah's data into pacelab
   
-  burrito <- get_pace_tbl(paceR_db, "vIndividual", collect = FALSE) %>% 
+  burrito <- get_pace_tbl(paceR_db, "vIndivid", collect = FALSE) %>% 
     filter (NameOf == "Burrito") %>% 
     collect ()
   
   focal_SC <- focal_SC %>% 
-    mutate (InteractantNameOf = ifelse (InteractantNameOf == "Chili", "Burrito", InteractantNameOf),
-            InteractantDateOfBirth = ifelse (InteractantNameOf == "Chilie", burrito$DateOfBirth, InteractantDateOfBirth))
+    mutate (InteractNameOf = ifelse (InteractNameOf == "Chili", "Burrito", InteractNameOf),
+            InteractDateOfBirth = ifelse (InteractNameOf == "Chilie", burrito$DateOfBirth, InteractDateOfBirth))
 
 ##########
   
   # Create column with Individual role
-  individualrole <- focal_SC %>%
-    filter (NameOf == InteractantNameOf) %>%
-    mutate (IndividualRole = InteractantRole) %>%
-    select (FocalBehaviourID, IndividualRole)
+  individrole <- focal_SC %>%
+    filter (NameOf == InteractNameOf) %>%
+    mutate (IndividRole = InteractRole) %>%
+    select (FocalBehavID, IndividRole)
   
-  focal_SC <- individualrole %>% 
-    left_join (focal_SC, ., by = "FocalBehaviourID")
+  focal_SC <- individrole %>% 
+    left_join (focal_SC, ., by = "FocalBehavID")
   
   # Remove additional lines from interactant table that are not necessary
   # THIS HAS TO BE CONTROLLED
   focal_SC <- focal_SC %>% 
-    group_by (FocalBehaviourID) %>%
+    group_by (FocalBehavID) %>%
     mutate (nFBID = n()) %>%
     ungroup () %>%
-    mutate (nFBID = ifelse (is.na(FocalBehaviourID), NA_integer_, nFBID),
+    mutate (nFBID = ifelse (is.na(FocalBehavID), NA_integer_, nFBID),
             newlinenumber = row_number ()) %>%
     # Filter all lines 
     ## 1. with only one entry in tblFocalBehaviourID, including lines with no tblFocalBehaviourInteractantID:
@@ -57,102 +56,100 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
               # 2. Without FocalBehaviourID:
               is.na(nFBID) | 
               # 3. Where the partner is not the focalindividual if more than 1 line in tblFocalBehaviourID:
-              (nFBID > 1 & (InteractantNameOf != NameOf | is.na(InteractantNameOf)))) %>% 
+              (nFBID > 1 & (InteractNameOf != NameOf | is.na(InteractNameOf)))) %>% 
     select (-nFBID)
   
   # Calculate derived variables (done separately for reduced datasets (i.e. using distinct ()) as much faster than using entire dataset
   # Also includes correction for out-of-view time
   
   stateduration <- focal_SC %>% 
-    distinct (FocalStateID) %>%
+    distinct (FocalStateID, .keep_all = TRUE) %>%
     mutate (StateDuration = round (difftime (StateEnd, StateBegin, units = "mins"), digits = 2)) %>% 
     select (FocalStateID, StateDuration)
   
   outofview <- focal_SC %>% 
-    distinct (FocalStateID) %>%
-    filter (StateVisibilityStatus == "Out of view") %>%
+    distinct (FocalStateID, .keep_all = TRUE) %>%
+    filter (StateVisibilityStatus == "OV") %>%
     mutate (StateDuration = round (difftime (StateEnd, StateBegin, units = "mins"), digits = 2)) %>% 
     group_by (FocalID) %>%
     summarise (OutOfViewDuration = sum (StateDuration))
   
   age_and_focalduration <- focal_SC %>% 
-    distinct (FocalID) %>% 
+    distinct (FocalID, .keep_all = TRUE) %>% 
     mutate (AgeAtFocal = round((as.Date (FocalBegin) - as.Date (DateOfBirth))/365.25, digits = 1)) %>% 
     left_join (outofview, by = "FocalID") %>%
     mutate (FocalDuration = round (difftime (FocalEnd, FocalBegin, units = "mins"), digits = 2)) %>% 
     mutate (FocalDurationCorrected = ifelse (is.na(OutOfViewDuration), FocalDuration, FocalDuration - OutOfViewDuration)) %>%
     select (FocalID, AgeAtFocal, FocalDuration, OutOfViewDuration, FocalDurationCorrected)
   
-  ageofinteractant <- focal_SC %>% 
-    distinct (FocalBehaviourInteractantID) %>% 
-    filter (NameOf != InteractantNameOf) %>% 
-    mutate (InteractantAgeAtFocal = round((as.Date (FocalBegin) - as.Date (InteractantDateOfBirth))/365.25, digits = 1)) %>% 
-    select (FocalBehaviourInteractantID, InteractantAgeAtFocal)
+  ageofinteract <- focal_SC %>% 
+    distinct (FocalBehavInteractID, .keep_all = TRUE) %>% 
+    filter (NameOf != InteractNameOf) %>% 
+    mutate (InteractAgeAtFocal = round((as.Date (FocalBegin) - as.Date (InteractDateOfBirth))/365.25, digits = 1)) %>% 
+    select (FocalBehavInteractID, InteractAgeAtFocal)
   
     # View (ageofinteractant %>% select (InteractantNameOf, InteractantDateOfBirth, InteractantAgeAtFocal) %>% 
           # distinct (InteractantNameOf, InteractantAgeAtFocal))
   
-  behaviourduration <- focal_SC %>% 
-    distinct (FocalBehaviourID) %>% 
+  behavduration <- focal_SC %>% 
+    distinct (FocalBehavID, .keep_all = TRUE) %>% 
     #mutate (BehaviourBegin = as.Date (BehaviourBegin), BehaviourEnd = as.Date (BehaviourEnd)) %>% 
-    filter (BehaviourBegin != BehaviourEnd) %>% 
-    mutate (BehaviourDuration = round (difftime (BehaviourEnd, BehaviourBegin, units = "mins"), digits = 2)) %>% 
-    select (FocalBehaviourID, BehaviourDuration)
+    filter (BehavBegin != BehavEnd) %>% 
+    mutate (BehavDuration = round (difftime (BehavEnd, BehavBegin, units = "mins"), digits = 2)) %>% 
+    select (FocalBehavID, BehavDuration)
   
   focal_SC <- focal_SC %>% 
     left_join(stateduration, by = c("FocalStateID")) %>% 
     left_join(age_and_focalduration, by = "FocalID") %>% 
-    left_join(ageofinteractant, by = c("FocalBehaviourInteractantID")) %>% 
-    left_join(behaviourduration, by = "FocalBehaviourID") %>% 
-    mutate (BehaviourDuration = ifelse (is.na (BehaviourDuration), 0, BehaviourDuration))
+    left_join(ageofinteract, by = c("FocalBehavInteractID")) %>% 
+    left_join(behavduration, by = "FocalBehavID") %>% 
+    mutate (BehavDuration = ifelse (is.na (BehavDuration), 0, BehavDuration))
 
   #############
   # Add AgeClass from Censusdata
-  
-  safe.ifelse <- function(cond, yes, no) structure(ifelse(cond, yes, no), class = class(yes)) 
   
    partnerAC <- getv_CensusMonthly (paceR_db) %>%
     group_by (NameOf, CensusAgeClass, DateOfBirth, Sex) %>% 
     summarise (FirstDateAC = min (CensusDateOf),
                LastDateAC = max (CensusDateOf)) %>% 
     ungroup %>%
-    mutate (FirstDateAC = safe.ifelse (CensusAgeClass == "Infant",  DateOfBirth, FirstDateAC)) %>% 
+    mutate (FirstDateAC = if_else (CensusAgeClass == "Infant",  DateOfBirth, FirstDateAC)) %>% 
     arrange (NameOf, FirstDateAC) %>% 
     group_by (NameOf) %>% 
-    mutate (LeftAC = safe.ifelse (!is.na(lead (FirstDateAC)), lead (FirstDateAC) - 1, LastDateAC)) %>%
+    mutate (LeftAC = if_else (!is.na(lead (FirstDateAC)), lead (FirstDateAC) - 1, LastDateAC)) %>%
     ungroup
   
   getAC <- function (Name, Date) {
     AC <- partnerAC [partnerAC$NameOf == Name & Date %within% interval(partnerAC$FirstDateAC, partnerAC$LeftAC), ]$CensusAgeClass
-    AC <- ifelse (grepl ("Juv", Name), "Juvenile",
-                  ifelse (grepl ("Inf", Name), "Infant",
-                          ifelse (grepl ("Adult", Name), "Adult", AC)))
+    AC <- ifelse (grepl ("Juv", Name), "J",
+                  ifelse (grepl ("Inf", Name), "I",
+                          ifelse (grepl ("Adult", Name), "A", AC)))
     AC <- ifelse (length(AC) == 0, "not in census at focaldate", AC)
     AC <- ifelse (is.na(AC), "not in census at focaldate", AC)
     return (AC)
   }
   
   sc.temp <- focal_SC %>%
-    filter (!is.na (InteractantNameOf)) %>% 
-    select (Name = InteractantNameOf, Date = FocalBegin) %>% 
+    filter (!is.na (InteractNameOf)) %>% 
+    select (Name = InteractNameOf, Date = FocalBegin) %>% 
     mutate (Date = as.Date (Date)) %>% 
     distinct (Name, Date)
   
-  InteractantAgeClass <- unlist (lapply (1:nrow(sc.temp), function (i) getAC (sc.temp$Name[i], sc.temp$Date[i])))
-  sc.temp <- cbind (sc.temp, InteractantAgeClass)
+  InteractAgeClass <- unlist (lapply (1:nrow(sc.temp), function (i) getAC (sc.temp$Name[i], sc.temp$Date[i])))
+  sc.temp <- cbind (sc.temp, InteractAgeClass)
   
   focal_SC <- focal_SC %>% 
     mutate (Date = as.Date (FocalBegin)) %>% 
-    left_join(., sc.temp, by = c("InteractantNameOf" = "Name", "Date")) %>% 
+    left_join(., sc.temp, by = c("InteractNameOf" = "Name", "Date")) %>% 
     select (-Date)
   ###############
   
   
   focal_SC <- focal_SC %>%
-    mutate(BehaviourName = ifelse(BehaviourName == "groom" & Role == "Contact", "groom in contact",
-                                  ifelse(BehaviourName == "groom" & Role == "Proximity", "groom in proximity", BehaviourName))) %>% 
-    mutate(BehaviourName = ifelse(BehaviourName == "groom solicit" & Role == "Contact", "groom solicit in contact",
-                                  ifelse(BehaviourName == "groom" & Role == "Proximity", "groom solicit in proximity", BehaviourName)))
+    mutate(BehavName = ifelse(BehavName == "groom" & Role == "Contact", "groom in contact",
+                                  ifelse(BehavName == "groom" & Role == "Proximity", "groom in proximity", BehavName))) %>% 
+    mutate(BehavName = ifelse(BehavName == "groom solicit" & Role == "Contact", "groom solicit in contact",
+                                  ifelse(BehavName == "groom" & Role == "Proximity", "groom solicit in proximity", BehavName)))
   
   focal_SC <- focal_SC %>%
     select (linenumber, newlinenumber, PrimateSpeciesCommonName,
@@ -160,15 +157,15 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
             GroupName, GroupCode,
             FocalBegin, FocalEnd, FocalDuration, FocalDurationCorrected, 
             StateBegin, StateEnd, StateDuration,
-            StateVisibilityStatus, StateBehaviourName,  
-            BehaviourBegin, BehaviourEnd, BehaviourDuration, BehaviourName,
-            IndividualID, Sex, DateOfBirth, AgeAtFocal, NameOf,
-            Role, IndividualRole, InteractantRole, 
-            InteractantID, InteractantNameOf, InteractantSex, InteractantDateOfBirth, InteractantAgeAtFocal, InteractantAgeClass,
-            InteractantSpeciesName, InteractantKingdom,
+            StateVisibilityStatus, StateBehavName,  
+            BehavBegin, BehavEnd, BehavDuration, BehavName,
+            IndividID, Sex, DateOfBirth, AgeAtFocal, NameOf,
+            Role, IndividRole, InteractRole, 
+            InteractID, InteractNameOf, InteractSex, InteractDateOfBirth, InteractAgeAtFocal, InteractAgeClass,
+            InteractSpeciesName, InteractKingdom,
             FocalComments, BehaviourComments,
             SessionDayID, ProjectID, SubProjectID, ContactID,
-            FocalID, FocalStateID, FocalBehaviourID, FocalBehaviourInteractantID)
+            FocalID, FocalStateID, FocalBehavID, FocalBehavInteractID)
   
   # Short table
   if(!full) {
@@ -176,15 +173,15 @@ get_focaldata_SC <- function(paceR_db, full = TRUE) {
       select (linenumber, GroupCode,
               FocalBegin, FocalEnd, FocalDurationCorrected, 
               StateBegin, StateEnd, StateDuration,
-              StateVisibilityStatus, StateBehaviourName,
-              BehaviourBegin, BehaviourEnd, BehaviourDuration, BehaviourName,
+              StateVisibilityStatus, StateBehavName,
+              BehavBegin, BehavEnd, BehavDuration, BehavName,
               DateOfBirth, AgeAtFocal, NameOf,
-              Role, IndividualRole, InteractantRole,
-              InteractantNameOf, InteractantSex, InteractantDateOfBirth, InteractantAgeAtFocal, InteractantAgeClass,
-              InteractantSpeciesName, InteractantKingdom,
+              Role, IndividRole, InteractRole,
+              InteractNameOf, InteractSex, InteractDateOfBirth, InteractAgeAtFocal, InteractAgeClass,
+              InteractSpeciesName, InteractKingdom,
               FocalComments, BehaviourComments,
               SessionDayID, ProjectID, SubProjectID, ContactID,
-              FocalID, FocalStateID, FocalBehaviourID, FocalBehaviourInteractantID)
+              FocalID, FocalStateID, FocalBehavID, FocalBehavInteractID)
     
   }
   return (focal_SC)

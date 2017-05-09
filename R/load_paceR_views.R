@@ -35,15 +35,15 @@ getv_CensusMonthly <- function(paceR_db, full = TRUE){
 #' getv_Individual(paceR_db)
 getv_Individual <- function(paceR_db, full = TRUE){
 
-  ind <- get_pace_tbl(paceR_db, "vIndividual")
+  ind <- get_pace_tbl(paceR_db, "vIndivid")
 
   ind <- ind %>%
     mutate_each(funs(as.Date), starts_with("Date")) %>%
-    rename(IndividualID = ID)
+    rename(IndividID = ID)
 
   if (!full) {
     ind <- ind %>%
-      select(IndividualID, NameOf, Project, DateOfBirth, Sex)
+      select(IndividID, NameOf, Project, DateOfBirth, Sex)
   }
 
   return(ind)
@@ -103,15 +103,15 @@ getv_Phenology <- function(paceR_db, full = TRUE, project = ""){
 getv_AlphaMaleTenure <- function(paceR_db, full = TRUE){
 
   alpha_tenures <- get_pace_tbl(paceR_db, "vAlphaMaleTenure") %>%
-    arrange(GroupCode, AMT_DateStart) %>%
-    select(GroupCode, GroupName, AMT_DateStart, AMT_DateEnd,
+    arrange(GroupCode, AMT_DateBegin) %>%
+    select(GroupCode, GroupName, AMT_DateBegin, AMT_DateEnd,
            AlphaMaleID, AlphaMale, AlphaMaleDOB,
            AMT_Comments, AlphaMaleTenureID) %>%
     mutate_each(funs(as.Date), contains("Date"), AlphaMaleDOB)
 
   if (!full) {
     alpha_tenures <- alpha_tenures %>%
-      select(GroupCode, AMT_DateStart, AMT_DateEnd, AlphaMale)
+      select(GroupCode, AMT_DateBegin, AMT_DateEnd, AlphaMale)
     # sorted out: GroupName, AlphaMaleID, AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID
   }
   return(alpha_tenures)
@@ -128,15 +128,15 @@ getv_AlphaMaleTenure <- function(paceR_db, full = TRUE){
 getv_AlphaFemaleTenure <- function(paceR_db, full = TRUE){
 
   alpha_tenures <- get_pace_tbl(paceR_db, "vAlphaFemaleTenure") %>%
-    arrange(GroupCode, AFT_DateStart) %>%
-    select(GroupCode, GroupName, AFT_DateStart, AFT_DateEnd,
+    arrange(GroupCode, AFT_DateBegin) %>%
+    select(GroupCode, GroupName, AFT_DateBegin, AFT_DateEnd,
            AlphaFemaleID, AlphaFemale, AlphaFemaleDOB,
            AFT_Comments, AlphaFemaleTenureID) %>%
     mutate_each(funs(as.Date), contains("Date"), AlphaFemaleDOB)
 
   if (!full) {
     alpha_tenures <- alpha_tenures %>%
-      select(GroupCode, AFT_DateStart, AFT_DateEnd, AlphaFemale)
+      select(GroupCode, AFT_DateBegin, AFT_DateEnd, AlphaFemale)
     # sorted out: GroupName, AlphaMaleID, AlphaMaleDOB, AMT_Comments, AlphaMaleTenureID
   }
   return(alpha_tenures)
@@ -153,15 +153,15 @@ getv_AlphaFemaleTenure <- function(paceR_db, full = TRUE){
 getv_DominanceHierarchy <- function(paceR_db, full = TRUE){
 
   hierarchy <- get_pace_tbl(paceR_db, "vDominanceHierarchy") %>%
-    select(DominanceHierarchyID, SpeciesCommonName, GroupName, GroupCode, HierarchyDateStart,
+    select(DominanceHierarchyID, SpeciesCommonName, GroupName, GroupCode, HierarchyDateBegin,
            HierarchyDateEnd, HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments) %>%
     mutate_each(funs(as.Date), contains("Date"), DateOfBirth) %>%
-    arrange(GroupCode, HierarchyDateStart, Rank)
+    arrange(GroupCode, HierarchyDateBegin, Rank)
 
 
   if (!full) {
     hierarchy <- hierarchy %>%
-      select(GroupCode, HierarchyDateStart, HierarchyDateEnd,
+      select(GroupCode, HierarchyDateBegin, HierarchyDateEnd,
              HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments)
     # sorted out: DominanceHierarchyID, SpeciesCommonName, GroupName,
   }
