@@ -20,9 +20,9 @@ pheno_prep_sr <- function(pheno = NULL, exclude_species = "", item = "Fruit",
   }
 
   # Retain only records related to fruit
-  pheno <- pheno %>% filter(FoodPart == item)
+  pheno <- pheno %>% filter(TaxonPart == item)
 
-  pheno$FoodPart <- "Item"
+  pheno$TaxonPart <- "Item"
 
   # Discard irrelevant columns
   pheno <- pheno %>% select(-PhenologyPercent, -PhenologyCount, -ScientificName,
@@ -30,19 +30,19 @@ pheno_prep_sr <- function(pheno = NULL, exclude_species = "", item = "Fruit",
 
   # New useful columns
   pheno <- pheno %>%
-    mutate(year_of = year(PhenologyDate),
-           month_of = month(PhenologyDate))
+    mutate(year_of = year(DateOf),
+           month_of = month(DateOf))
 
   # Exclude 2006 pheno data because no maturity info
   pheno <- pheno %>% filter(year_of > 2006)
 
   pheno$month_of <- factor(pheno$month_of, labels = month.abb[1:12])
 
-  # First unite the "FoodPart" and "Measurement" columns
-  ph_wide <- pheno %>% unite(FoodPartMeasurement, c(FoodPart, Measurement))
+  # First unite the "TaxonPart" and "Measurement" columns
+  ph_wide <- pheno %>% unite(TaxonPartMeasurement, c(TaxonPart, Measurement))
 
-  # Now spread PhenologyScore using FoodPartMeasurement as the key
-  ph_wide <- ph_wide %>% spread(FoodPartMeasurement, PhenologyScore)
+  # Now spread PhenologyScore using TaxonPartMeasurement as the key
+  ph_wide <- ph_wide %>% spread(TaxonPartMeasurement, PhenologyScore)
 
   # Fix maturity code 5 (change to zero)
   ph_wide[which(ph_wide$Item_Maturity == 5), ]$Item_Maturity <- 0
