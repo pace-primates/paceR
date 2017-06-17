@@ -5,3 +5,5 @@
 scripts/temp_fc.R
 data
 *_cache/
+
+.DS_Store
