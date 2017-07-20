@@ -11,7 +11,7 @@ getv_CensusMonthly <- function(paceR_db, full = TRUE){
   census <- get_pace_tbl(paceR_db, "vCensusMonthly")
 
   census <- census %>%
-    mutate_each(funs(as.Date), CensusDateOf, DateOfBirth)
+    mutate_at(c("CensusDateOf", "DateOfBirth"), as.Date)
 
 
   if (!full) {
@@ -38,7 +38,7 @@ getv_Individual <- function(paceR_db, full = TRUE){
   ind <- get_pace_tbl(paceR_db, "vIndivid")
 
   ind <- ind %>%
-    mutate_each(funs(as.Date), starts_with("Date")) %>%
+    mutate_at(vars(starts_with("Date")), as.Date) %>%
     rename(IndividID = ID)
 
   if (!full) {
@@ -81,7 +81,7 @@ getv_Phenology <- function(paceR_db, full = TRUE, project = ""){
   }
 
   p <- p %>%
-    mutate_each(funs(as.Date), contains("Date"))
+    mutate_at(vars(contains("Date")), as.Date)
 
   if (!full) {
     p <- p %>%
@@ -101,14 +101,14 @@ getv_Phenology <- function(paceR_db, full = TRUE, project = ""){
 #' @examples
 #' getv_AlphaMaleTenure(paceR_db)
 getv_AlphaMaleTenure <- function(paceR_db, full = TRUE){
-
+  
   alpha_tenures <- get_pace_tbl(paceR_db, "vAlphaMaleTenure") %>%
     arrange(GroupCode, AMT_DateBegin) %>%
     select(GroupCode, GroupName, AMT_DateBegin, AMT_DateEnd,
            AlphaMaleID, AlphaMale, AlphaMaleDOB,
            AMT_Comments, AlphaMaleTenureID) %>%
-    mutate_each(funs(as.Date), contains("Date"), AlphaMaleDOB)
-
+    mutate_at(vars(contains("Date"), AlphaMaleDOB), as.Date)
+  
   if (!full) {
     alpha_tenures <- alpha_tenures %>%
       select(GroupCode, AMT_DateBegin, AMT_DateEnd, AlphaMale)
@@ -132,7 +132,7 @@ getv_AlphaFemaleTenure <- function(paceR_db, full = TRUE){
     select(GroupCode, GroupName, AFT_DateBegin, AFT_DateEnd,
            AlphaFemaleID, AlphaFemale, AlphaFemaleDOB,
            AFT_Comments, AlphaFemaleTenureID) %>%
-    mutate_each(funs(as.Date), contains("Date"), AlphaFemaleDOB)
+    mutate_at(vars(contains("Date"), AlphaFemaleDOB), as.Date)
 
   if (!full) {
     alpha_tenures <- alpha_tenures %>%
@@ -155,7 +155,7 @@ getv_DominanceHierarchy <- function(paceR_db, full = TRUE){
   hierarchy <- get_pace_tbl(paceR_db, "vDominanceHierarchy") %>%
     select(DominanceHierarchyID, SpeciesCommonName, GroupName, GroupCode, HierarchyDateBegin,
            HierarchyDateEnd, HierarchyComments, NameOf, DateOfBirth, Sex, Rank, Comments) %>%
-    mutate_each(funs(as.Date), contains("Date"), DateOfBirth) %>%
+    mutate_at(vars(contains("Date"), DateOfBirth), as.Date)  %>%
     arrange(GroupCode, HierarchyDateBegin, Rank)
 
 
