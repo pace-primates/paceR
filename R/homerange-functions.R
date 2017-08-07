@@ -50,11 +50,13 @@ load_hr_packages <- function(...)
 #'    \item 384 pts (~32 full days) for half-yearly home range
 #'    \item 768 pts (~64 full days) for annual home range
 #' }
+#' @param dir_to_files Directory in which the necessary datafiles are included, e.g. 'paste0(getwd(), "/data")'
 #' @export
 #' @examples
 #'
 get_habitat_use <- function (ranging_waypoints, start_date = NULL, ints_per_year = 1,
-                             hr_periods = NULL, min_nb_reloc = NULL){
+                             hr_periods = NULL, min_nb_reloc = NULL,
+                             dir_to_files = NULL){
   # Are all arguments are correcly set?
   # If hr_periods are defined, set ints_per_year to NULL and check if min_nb_reloc is defined
   if(!is.null(hr_periods)){
@@ -197,11 +199,11 @@ get_habitat_use <- function (ranging_waypoints, start_date = NULL, ints_per_year
   ob <- select(ob, -date_begin, -date_end)
   
   # Habitat MAPS
-  lc <- rgdal::readGDAL(fname = "./data/LC-2011-03-06.tif")
+  lc <- rgdal::readGDAL(fname = paste0(dir_to_files, "/LC-2011-03-06.tif"))
   sp::fullgrid(lc) <- FALSE
   names(lc) <- "habitat"
   
-  ndvi <- rgdal::readGDAL(fname = "./data/NDVI-2011-03-06.tif")
+  ndvi <- rgdal::readGDAL(fname = paste0(dir_to_files, "/NDVI-2011-03-06.tif"))
   fullgrid(ndvi) <- FALSE
   names(ndvi) <- "ndvi"
   

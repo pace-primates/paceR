@@ -49,13 +49,13 @@ pheno_prep_sr <- function(pheno = NULL, exclude_species = "", item = "Fruit",
 
   if (maturity == "Mature") {
     ph_wide <- ph_wide %>%
-      mutate_each(funs(as.numeric), Item_Cover, Item_Maturity) %>%
+      mutate_at(vars("Item_Cover", "Item_Maturity"), as.numeric)  %>%
       mutate(index_avail = (Item_Cover / 4) * (Item_Maturity / 4)) %>%
       filter(!is.na(index_avail))
   }
   else if (maturity == "Immature") {
     ph_wide <- ph_wide %>%
-      mutate_each(funs(as.numeric), Item_Cover, Item_Maturity) %>%
+      mutate_at(vars("Item_Cover", "Item_Maturity"), as.numeric) %>%
       mutate(index_avail = (Item_Cover / 4) * ((4 - Item_Maturity) / 4)) %>%
       filter(!is.na(index_avail))
   }
