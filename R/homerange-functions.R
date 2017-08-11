@@ -7,9 +7,9 @@
 #'
 load_hr_packages <- function(...)
 {
-  packages <- c('adehabitatHR', 'adehabitatLT', 'plyr', 'lubridate', 'scales', 'tidyverse', 'stringr',
+  packages <- c('adehabitatHR', 'adehabitatLT', 'plyr', 'scales', 'stringr',
                 'RColorBrewer', 'rgdal', 'gridExtra', 'rgeos', 'colorspace',
-                'stringr', 'tidyr', 'dplyr', 'ggplot2', 'readr', 'sf')
+                'stringr', 'sf', 'lubridate', 'tidyverse')
   for (package in packages) {
     if (!isTRUE(require(package, character.only = TRUE))) {
       install.packages(package)

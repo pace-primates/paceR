@@ -5,7 +5,7 @@
 \title{Calculate habitat utilization from ranging data and topography (?) map}
 \usage{
 get_habitat_use(ranging_waypoints, start_date = NULL, ints_per_year = 1,
-  hr_periods = NULL, min_nb_reloc = NULL)
+  hr_periods = NULL, min_nb_reloc = NULL, dir_to_files = NULL)
 }
 \arguments{
 \item{start_date}{Begin of first time interval. By default (NULL), Jan 1st of the earliest timestamp in ranging dataset - NOT YET IMPLEMENTED}
@@ -32,6 +32,8 @@ Note: 'ints_per_year' is ignored if both are specified}
    \item 384 pts (~32 full days) for half-yearly home range
    \item 768 pts (~64 full days) for annual home range
 }}
+
+\item{dir_to_files}{Directory in which the necessary datafiles are included, e.g. 'paste0(getwd(), "/data")'}
 
 \item{ranging_waypoint}{Table with ranging waypoint - MORE SPECIFICS}
 }
