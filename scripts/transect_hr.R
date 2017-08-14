@@ -134,9 +134,6 @@ for (i in seq_along(hr_files)) {
  hr_polys[[i]] <- rgdal::readOGR(dsn = paste0(hr_dir, hr_files[i]))
 }
 
-# get_overlapping_tr <- function(test_hr, tran_poly) {
-#   res <- over(test_hr, tran_poly, returnList = TRUE)[[1]]$id
-# }
 
 tr_overlap <- list(7)
 
