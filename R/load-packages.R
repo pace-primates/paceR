@@ -5,8 +5,9 @@
 #' load_pace_packages()
 load_pace_packages <- function(...)
 {
-  packages <- c('plyr', 'lubridate', 'tidyverse', 'stringr')
-  # packages <- c('stringr', 'plyr', 'lubridate', 'tidyr', 'dplyr', 'ggplot2')
+  packages <- c('adehabitatHR', 'adehabitatLT', 'plyr', 'scales', 'stringr',
+                'RColorBrewer', 'rgdal', 'gridExtra', 'rgeos', 'colorspace',
+                'stringr', 'sf', 'lubridate', 'tidyverse') 
   for (package in packages) {
     if (!isTRUE(require(package, character.only = TRUE))) {
       install.packages(package)

@@ -1,26 +1,3 @@
-#' Loads various packages required to calculate homeranges
-#'
-#' @param ... definition
-#'
-#' @export
-#' @examples
-#'
-load_hr_packages <- function(...)
-{
-  packages <- c('adehabitatHR', 'adehabitatLT', 'plyr', 'scales', 'stringr',
-                'RColorBrewer', 'rgdal', 'gridExtra', 'rgeos', 'colorspace',
-                'stringr', 'sf', 'lubridate', 'tidyverse')
-  for (package in packages) {
-    if (!isTRUE(require(package, character.only = TRUE))) {
-      install.packages(package)
-      require(package, character.only = TRUE, ...)
-    } else
-      require(package, character.only = TRUE, ...)
-  }
-}
-
-
-
 #' Calculate habitat utilization from ranging data and topography (?) map
 #'
 #' Creates dataframe that contains various information on habitat use for each group and time interval\cr
