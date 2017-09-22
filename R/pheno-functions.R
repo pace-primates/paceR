@@ -699,3 +699,129 @@ vector.averaging <-  function(direction, distance, deg = TRUE) {
     }
   }
 }
+
+#' Get gps points for vertical transects
+#'
+#' @param paceR
+#' @param tr_full Dataframe with tblVegetationTransect from Pacelab
+#' @param data_dir Define directory in which the file 'v_transfect_2016.gpx' can be found.
+#'
+#' @export
+#' @examples
+#' get_vertical_transects <- function(paceR, tr_full_data, data_dir = "data/")
+
+get_vertical_transects <- function(paceR, tr_full, data_dir = "data/") {
+  
+  # Use gps points from file
+  vt <- rgdal::readOGR(dsn = paste0(data_dir, "v_transect_2016.gpx"), layer = "waypoints")
+  vt2 <- spTransform(vt, CRSobj = CRS("+init=epsg:32616"))
+  
+  vt_df <- tbl_df(vt2) %>%
+    select(name, x = coords.x1, y = coords.x2)
+  
+  vt_df <- vt_df %>%
+    mutate(endpoint = str_extract(name, "[a-zA-z]+"))
+  
+  vt_df$name <- str_replace(vt_df$name, "End.", "")
+  vt_df$name <- str_replace(vt_df$name, "Start.", "")
+  
+  vt_df <- vt_df %>%
+    group_by(name) %>%
+    mutate(endpoint = case_when(y == min(y) ~ "S.",
+                                y == max(y) ~ "N."))
+  
+  vt_df <- unite(vt_df, endpoint, endpoint, name, sep = "")
+  
+  v_res <- select(tr_full, ID, TransectBegin, TransectEnd) %>%
+    inner_join(vt_df, by = c("TransectBegin" = "endpoint")) %>%
+    rename(start_x = x, start_y = y)
+  
+  v_res <- v_res %>%
+    inner_join(vt_df, by = c("TransectEnd" = "endpoint")) %>%
+    rename(end_x = x, end_y = y)
+  
+  v_res <- v_res %>%
+    mutate(transect = str_extract(TransectBegin, "[0-9]+"))
+  
+  tr_v <- select(v_res, -TransectBegin, -TransectEnd)
+  
+  tr_v$transect <- paste0("v_", tr_v$transect)
+  
+  # Set width
+  tr_v$radius <- 2
+  return(tr_v)
+}
+
+#' Get gps points for horizontal transects
+#'
+#' @param paceR
+#' @param tr_full Dataframe with 'tblVegetationTransect' from Pacelab
+#' @param tr_pt Dataframe with 'tblVegetationTransectGridPoint' from Pacelab
+#'
+#' @export
+#' @examples
+#' get_horizontal_transects <- function(paceR, tr_full, tr_pt)
+
+get_horizontal_transects <- function(paceR, tr_full, tr_pt) {
+  
+  tr_begin <- tr_full %>%
+    select(ID, matches("Grid")) %>%
+    inner_join(select(tr_pt, ID, GpsUtm), by = c("GridPointBeginID" = "ID")) %>%
+    separate(GpsUtm, into = c("zone", "char", "x", "y"), sep = " ") %>%
+    rename(start_x = x, start_y = y) %>%
+    select(-matches("Grid"), -zone, -char)
+  
+  tr_end <- tr_full %>%
+    select(ID, matches("Grid")) %>%
+    inner_join(select(tr_pt, ID, GpsUtm), by = c("GridPointEndID" = "ID")) %>%
+    separate(GpsUtm, into = c("zone", "char", "x", "y"), sep = " ") %>%
+    rename(end_x = x, end_y = y) %>%
+    select(-matches("Grid"), -zone, -char)
+  
+  tr_h <- inner_join(tr_begin, tr_end, by = "ID")
+  
+  tr_h$transect <- paste0("h_", tr_h$ID)
+  
+  tr_h <- mutate_at(tr_h, vars(-transect, -ID), as.numeric)
+  
+  # Set width
+  tr_h$radius <- 1
+  return(tr_h)
+}
+
+#' Transforms start- and end-points of transects into polygons (rectangles) with respective width
+#'
+#' @param all_tr_points Dataframe bind_rows(horizontal_transect, vertical_transects)
+#'
+#' @export
+#' @examples
+#' tr_to_polys <- function(all_tr_points)
+
+tr_to_polys <- function(all_tr_points){
+  
+  # First, define function to transform start- and end-points to lines
+  get_line <- function(df) {
+    res <- st_linestring(cbind(c(df$start_x, df$end_x), c(df$start_y, df$end_y)))
+    return(res)
+  }
+  
+  # Transform points into lines
+  temp <- all_tr_points %>%
+    group_by(ID, radius) %>%
+    nest() %>%
+    mutate(lines = purrr::map(data, ~ get_line(.)))
+  
+  # Use UTM zone 16 as projection, and turn into sf-dataframe
+  tran_lines <- temp$lines %>%
+    st_sfc(crs = 32616)
+  
+  tran_lines <- st_as_sf(data.frame(id = temp$ID, radius = temp$radius), tran_lines)
+  
+  # Use sp package To make rectangles with respective width (capStyle flat not yet inlcuded into sf)
+  tran_sl <- as(tran_lines, "Spatial")
+  
+  tran_poly <- rgeos::gBuffer(tran_sl, byid = TRUE, capStyle = "flat",
+                              width = tran_sl$radius)
+  
+  return(tran_poly)
+}
