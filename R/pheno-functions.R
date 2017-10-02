@@ -763,29 +763,29 @@ get_vertical_transects <- function(paceR, tr_full, data_dir = "data/") {
 get_horizontal_transects <- function(paceR, tr_full, tr_pt) {
   
   tr_begin <- tr_full %>%
-    select(ID, matches("Grid")) %>%
+    select(TransectID, matches("Grid")) %>%
     inner_join(select(tr_pt, ID, GpsUtm), by = c("GridPointBeginID" = "ID")) %>%
     separate(GpsUtm, into = c("zone", "char", "x", "y"), sep = " ") %>%
     rename(start_x = x, start_y = y) %>%
     select(-matches("Grid"), -zone, -char)
   
   tr_end <- tr_full %>%
-    select(ID, matches("Grid")) %>%
+    select(TransectID, matches("Grid")) %>%
     inner_join(select(tr_pt, ID, GpsUtm), by = c("GridPointEndID" = "ID")) %>%
     separate(GpsUtm, into = c("zone", "char", "x", "y"), sep = " ") %>%
     rename(end_x = x, end_y = y) %>%
     select(-matches("Grid"), -zone, -char)
   
-  tr_h <- inner_join(tr_begin, tr_end, by = "ID")
+  tr_h <- inner_join(tr_begin, tr_end, by = "TransectID")
   
-  tr_h$transect <- paste0("h_", tr_h$ID)
+  tr_h$transect <- paste0("h_", tr_h$TransectID)
   
-  tr_h <- mutate_at(tr_h, vars(-transect, -ID), as.numeric)
+  tr_h <- mutate_at(tr_h, vars(-transect, -TransectID), as.numeric)
   
   # Set width
   tr_h$radius <- 1
   
-  tr_h <- rename(tr_h, TransectID = ID)
+  # tr_h <- rename(tr_h, TransectID = ID)
   return(tr_h)
 }
 
@@ -806,7 +806,7 @@ tr_to_polys <- function(all_tr_points){
   
   # Transform points into lines
   temp <- all_tr_points %>%
-    group_by(ID, radius) %>%
+    group_by(TransectID, radius) %>%
     nest() %>%
     mutate(lines = purrr::map(data, ~ get_line(.)))
   
@@ -814,7 +814,7 @@ tr_to_polys <- function(all_tr_points){
   tran_lines <- temp$lines %>%
     st_sfc(crs = 32616)
   
-  tran_lines <- st_as_sf(data.frame(id = temp$ID, radius = temp$radius), tran_lines)
+  tran_lines <- st_as_sf(data.frame(TransectID = temp$TransectID, radius = temp$radius), tran_lines)
   
   # Use sp package To make rectangles with respective width (capStyle flat not yet inlcuded into sf)
   tran_sl <- as(tran_lines, "Spatial")
