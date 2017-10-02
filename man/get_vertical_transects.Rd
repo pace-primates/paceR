@@ -7,6 +7,8 @@
 get_vertical_transects(paceR, tr_full, data_dir = "data/")
 }
 \arguments{
+\item{paceR}{The src_mysql connection to the PACE Database.}
+
 \item{tr_full}{Dataframe with tblVegetationTransect from Pacelab}
 
 \item{data_dir}{Define directory in which the file 'v_transfect_2016.gpx' can be found.}

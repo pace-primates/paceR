@@ -260,7 +260,7 @@ get_habitat_use <- function (ranging_waypoints, start_date = NULL, ints_per_year
   ob <- ob %>%
     mutate(start_date = int_start(ints),
            end_date = int_end(ints)) %>%
-    select(id, block_type, start_date, end_date, nb_reloc, area_50, area_70, area_95, ndvi_50, ndvi_70, ndvi_95,
+    select(GroupCode = id, block_type, start_date, end_date, nb_reloc, area_50, area_70, area_95, ndvi_50, ndvi_70, ndvi_95,
            ndvi_high, ndvi_medium, ndvi_low, spdf_50, spdf_70, spdf_95, ud)
   
   # Set the timezone back to original value
@@ -336,7 +336,7 @@ area.BRB <- function(x = NULL, start.date = NULL, end.date = NULL, hab = NULL, n
 get_sf_from_hu <- function(habitat_use_df){
   
   temp_df <- habitat_use_df %>%
-    select(id, block_type, nb_reloc, start_date, end_date, spdf_50, spdf_70, spdf_95)
+    select(GroupCode, block_type, nb_reloc, start_date, end_date, spdf_50, spdf_70, spdf_95)
   
   temp_df_long <- temp_df %>%
     gather(hr_type, spdf, spdf_50, spdf_70, spdf_95) %>%

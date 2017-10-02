@@ -7,6 +7,8 @@
 get_horizontal_transects(paceR, tr_full, tr_pt)
 }
 \arguments{
+\item{paceR}{The src_mysql connection to the PACE Database.}
+
 \item{tr_full}{Dataframe with 'tblVegetationTransect' from Pacelab}
 
 \item{tr_pt}{Dataframe with 'tblVegetationTransectGridPoint' from Pacelab}

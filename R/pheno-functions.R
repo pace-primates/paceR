@@ -702,14 +702,13 @@ vector.averaging <-  function(direction, distance, deg = TRUE) {
 
 #' Get gps points for vertical transects
 #'
-#' @param paceR
+#' @param paceR The src_mysql connection to the PACE Database.
 #' @param tr_full Dataframe with tblVegetationTransect from Pacelab
 #' @param data_dir Define directory in which the file 'v_transfect_2016.gpx' can be found.
 #'
 #' @export
 #' @examples
 #' get_vertical_transects <- function(paceR, tr_full_data, data_dir = "data/")
-
 get_vertical_transects <- function(paceR, tr_full, data_dir = "data/") {
   
   # Use gps points from file
@@ -732,7 +731,7 @@ get_vertical_transects <- function(paceR, tr_full, data_dir = "data/") {
   
   vt_df <- unite(vt_df, endpoint, endpoint, name, sep = "")
   
-  v_res <- select(tr_full, ID, TransectBegin, TransectEnd) %>%
+  v_res <- select(tr_full, TransectID, TransectBegin, TransectEnd) %>%
     inner_join(vt_df, by = c("TransectBegin" = "endpoint")) %>%
     rename(start_x = x, start_y = y)
   
@@ -754,14 +753,13 @@ get_vertical_transects <- function(paceR, tr_full, data_dir = "data/") {
 
 #' Get gps points for horizontal transects
 #'
-#' @param paceR
+#' @param paceR The src_mysql connection to the PACE Database.
 #' @param tr_full Dataframe with 'tblVegetationTransect' from Pacelab
 #' @param tr_pt Dataframe with 'tblVegetationTransectGridPoint' from Pacelab
 #'
 #' @export
 #' @examples
 #' get_horizontal_transects <- function(paceR, tr_full, tr_pt)
-
 get_horizontal_transects <- function(paceR, tr_full, tr_pt) {
   
   tr_begin <- tr_full %>%
@@ -786,6 +784,8 @@ get_horizontal_transects <- function(paceR, tr_full, tr_pt) {
   
   # Set width
   tr_h$radius <- 1
+  
+  tr_h <- rename(tr_h, TransectID = ID)
   return(tr_h)
 }
 
@@ -796,7 +796,6 @@ get_horizontal_transects <- function(paceR, tr_full, tr_pt) {
 #' @export
 #' @examples
 #' tr_to_polys <- function(all_tr_points)
-
 tr_to_polys <- function(all_tr_points){
   
   # First, define function to transform start- and end-points to lines
