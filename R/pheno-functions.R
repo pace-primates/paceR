@@ -702,14 +702,11 @@ vector.averaging <-  function(direction, distance, deg = TRUE) {
 
 #' Get gps points for vertical transects
 #'
-#' @param paceR The src_mysql connection to the PACE Database.
-#' @param tr_full Dataframe with tblVegetationTransect from Pacelab
+#' @param tr_full Dataframe with tblVegetationTransect_detailed from Pacelab/paceR
 #' @param data_dir Define directory in which the file 'v_transfect_2016.gpx' can be found.
 #'
 #' @export
-#' @examples
-#' get_vertical_transects <- function(paceR, tr_full_data, data_dir = "data/")
-get_vertical_transects <- function(paceR, tr_full, data_dir = "data/") {
+get_vertical_transects <- function(tr_full, data_dir = "data/") {
   
   # Use gps points from file
   vt <- rgdal::readOGR(dsn = paste0(data_dir, "v_transect_2016.gpx"), layer = "waypoints")
@@ -754,13 +751,11 @@ get_vertical_transects <- function(paceR, tr_full, data_dir = "data/") {
 #' Get gps points for horizontal transects
 #'
 #' @param paceR The src_mysql connection to the PACE Database.
-#' @param tr_full Dataframe with 'tblVegetationTransect' from Pacelab
+#' @param tr_full Dataframe with tblVegetationTransect_detailed from Pacelab/paceR
 #' @param tr_pt Dataframe with 'tblVegetationTransectGridPoint' from Pacelab
 #'
 #' @export
-#' @examples
-#' get_horizontal_transects <- function(paceR, tr_full, tr_pt)
-get_horizontal_transects <- function(paceR, tr_full, tr_pt) {
+get_horizontal_transects <- function(tr_full, tr_pt) {
   
   tr_begin <- tr_full %>%
     select(TransectID, matches("Grid")) %>%

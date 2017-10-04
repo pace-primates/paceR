@@ -4,18 +4,15 @@
 \alias{get_horizontal_transects}
 \title{Get gps points for horizontal transects}
 \usage{
-get_horizontal_transects(paceR, tr_full, tr_pt)
+get_horizontal_transects(tr_full, tr_pt)
 }
 \arguments{
-\item{paceR}{The src_mysql connection to the PACE Database.}
-
-\item{tr_full}{Dataframe with 'tblVegetationTransect' from Pacelab}
+\item{tr_full}{Dataframe with tblVegetationTransect_detailed from Pacelab/paceR}
 
 \item{tr_pt}{Dataframe with 'tblVegetationTransectGridPoint' from Pacelab}
+
+\item{paceR}{The src_mysql connection to the PACE Database.}
 }
 \description{
 Get gps points for horizontal transects
-}
-\examples{
-get_horizontal_transects <- function(paceR, tr_full, tr_pt)
 }

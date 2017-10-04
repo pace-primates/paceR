@@ -4,18 +4,13 @@
 \alias{get_vertical_transects}
 \title{Get gps points for vertical transects}
 \usage{
-get_vertical_transects(paceR, tr_full, data_dir = "data/")
+get_vertical_transects(tr_full, data_dir = "data/")
 }
 \arguments{
-\item{paceR}{The src_mysql connection to the PACE Database.}
-
-\item{tr_full}{Dataframe with tblVegetationTransect from Pacelab}
+\item{tr_full}{Dataframe with tblVegetationTransect_detailed from Pacelab/paceR}
 
 \item{data_dir}{Define directory in which the file 'v_transfect_2016.gpx' can be found.}
 }
 \description{
 Get gps points for vertical transects
-}
-\examples{
-get_vertical_transects <- function(paceR, tr_full_data, data_dir = "data/")
 }
