@@ -824,3 +824,31 @@ tr_to_polys <- function(all_tr_points){
   
   return(tran_poly)
 }
+
+
+#' Transforms fig table into a sf-dataframe
+#'
+#' @param figs Object with fig data (e.g. table from FicusData_Nov13_2013.csv)
+#'
+#' @export
+
+figs_to_sf <- function(figs){
+  
+  # Define function to turn x and y coords into st_point
+get_point <- function(df){
+  st_point(c(df$UtmEasting, df$UtmNorthing))
+}
+
+# Create column with sf_points
+temp <- figs %>% 
+  group_by(Name) %>% 
+  nest() %>% 
+  mutate(geom = purrr::map(data, ~get_point(.)))
+
+# Create sf dataframe
+fig_pts <- st_sfc(temp$geom)
+fig_pts <- st_sf(data.frame(Name = temp$Name), geom = fig_pts)
+st_crs(fig_pts) <- 32616
+
+return(fig_pts)
+}
