@@ -835,20 +835,23 @@ tr_to_polys <- function(all_tr_points){
 figs_to_sf <- function(figs){
   
   # Define function to turn x and y coords into st_point
-get_point <- function(df){
-  st_point(c(df$UtmEasting, df$UtmNorthing))
-}
-
-# Create column with sf_points
-temp <- figs %>% 
-  group_by(Name) %>% 
-  nest() %>% 
-  mutate(geom = purrr::map(data, ~get_point(.)))
-
-# Create sf dataframe
-fig_pts <- st_sfc(temp$geom)
-fig_pts <- st_sf(data.frame(Name = temp$Name), geom = fig_pts)
-st_crs(fig_pts) <- 32616
-
-return(fig_pts)
+  get_point <- function(df){
+    st_point(c(df$UtmEasting, df$UtmNorthing))
+  }
+  
+  # Create column with sf_points
+  temp <- figs %>% 
+    group_by(Name) %>%
+    nest() %>% 
+    mutate(geom = purrr::map(data, ~get_point(.)))
+  
+  # Create sf dataframe
+  figs_sf <- temp %>%
+    mutate(geom = st_sfc(geom)) %>% 
+    unnest(data) %>% 
+    st_sf()
+  
+  st_crs(figs_sf) <- 32616
+  
+  return(figs_sf)
 }
