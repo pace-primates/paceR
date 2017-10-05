@@ -4,10 +4,12 @@
 \alias{fpv_get_min_dbh_sr}
 \title{Set minimum DBHs for fruit-producing trees of each species.}
 \usage{
-fpv_get_min_dbh_sr(fpv = NULL)
+fpv_get_min_dbh_sr(fpv = NULL, tr = NULL)
 }
 \arguments{
 \item{fpv}{The FPV data.}
+
+\item{tr}{PACE transect data.}
 }
 \description{
 Set minimum DBHs for fruit-producing trees of each species.

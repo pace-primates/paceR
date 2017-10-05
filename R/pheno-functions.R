@@ -299,11 +299,12 @@ fpv_subset_pheno_sr <- function(fpv = NULL, pheno = NULL) {
 #' Set minimum DBHs for fruit-producing trees of each species.
 #'
 #' @param fpv The FPV data.
+#' @param tr PACE transect data.
 #'
 #' @export
 #' @examples
 #' min_dbh <- fpv_get_min_dbh_sr(fpv)
-fpv_get_min_dbh_sr <- function(fpv = NULL) {
+fpv_get_min_dbh_sr <- function(fpv = NULL, tr = NULL) {
 
   # Store uncorrected min dbhs
   min_dbh <- fpv %>%
