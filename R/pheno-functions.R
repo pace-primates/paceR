@@ -851,3 +851,100 @@ figs_to_sf <- function(figs){
   
   return(figs_sf)
 }
+
+#' Calcuate available biomass per homerange using the indices as weights.
+#'
+#' @param group def
+#' @param period_start_date def
+#' @param period_end_date def
+#' @param group_period_label def
+#' @param hr_type_incl 50, 70, or 95
+#' @param hr_sf def
+#' @param tr_geom Transect data with geometries
+#' @param tr_pheno_fpv Use table including geometries
+#' @param indices Index data to use as weights created by pheno_avail_indices_sr
+#' @param figs_sf def
+#'
+#' @export
+#' @examples
+#' biomass_hr_first <- biomass_hr(group = "CP", period_start_date = as.Date("2009-08-24"),
+#'                                period_end_date = as.Date("2009-12-11"), group_period_label = "CP_1",
+#'                                hr_type_incl = 95, hr_sf, tr_geom, tr_pheno_fpv, indices, figs_sf)
+
+biomass_avail_hr <- function (group, period_start_date, period_end_date, group_period_label,
+                              hr_type_incl = 95,
+                              hr_sf, tr_geom, tr_pheno_fpv, indices, figs_sf){
+  
+  # Get the homerange polygon
+  hr_subset <- hr_sf %>%
+    filter(GroupCode == group &
+             start_date == period_start_date &
+             hr_type == hr_type_incl) %>%
+    mutate(hr_size = as.numeric(st_area(geometry)/10000))
+  
+  if(nrow(hr_subset) != 1) stop("More or less than one homerange and period selected")
+  # Only use the transects from tr_geom that intersect with the homerange
+  tr_intersecting <- tr_geom %>%
+    filter(st_intersects(.$geometry, hr_subset$geometry) == 1)
+  
+  # Calculate transect area for these transects
+  tr_subset_hr_area = sum((distinct(tr_intersecting, TransectID, .keep_all = T))$tr_area)/10000
+  
+  # Use intersecting TransectIDs to filter tr_pheno_fpv
+  tr_pheno_fpv_subset <- tr_pheno_fpv %>%
+    filter(TransectID %in% tr_intersecting$TransectID)
+  
+  # Then calculate the max biomass for these transects
+  biomass_max_hr <- biomass_max_sr(tr_pheno_fpv_subset, tr_subset_hr_area)
+  
+  ## Filter pheno indices (only include indices for months within the hr period)
+  # First, create a table with all month and year combination for the study period
+  study_months <- as.tibble(seq(period_start_date, ceiling_date(period_end_date, unit = "month"), by = "month")) %>%
+    mutate(year_of = year(value),
+           month_of = month(value))
+  
+  # Then, filter the indices
+  indices_subset <- indices %>%
+    mutate(year_of = as.numeric(as.character(year_of)),
+           month_of = as.numeric(match(month_of, month.abb))) %>%
+    inner_join(., select(study_months, year_of, month_of),
+               by = c("year_of", "month_of"))
+  
+  # Calculate available biomass for homerange
+  biomass_avail_hr <- biomass_avail_sr(biomass_max_hr, indices_subset)
+  
+  
+  ## Recalculate fig biomass
+  if (!is.null(figs_sf)) {
+    biomass_avail_hr <- biomass_avail_hr %>% filter(!str_detect(SpeciesName, "Ficus"))
+    fig_indices_subset <- indices_subset %>% filter(str_detect(SpeciesName, "Ficus"))
+    fig_data <- figs_sf %>%
+      filter(st_intersects(.$geom, hr_subset$geometry) == 1) %>%
+      filter(!is.na(VirtualFicusCBH)) %>%
+      mutate(dbh = VirtualFicusCBH/pi, biomass_tree_max_kg = (47 * dbh^1.9)/1000)
+    
+    fig_data <- suppressWarnings(inner_join(fig_indices_subset,
+                                            fig_data, by = "SpeciesCode"))
+    
+    
+    fig_biomass_max_hr <- fig_data %>%
+      ungroup() %>%
+      group_by(SpeciesName, year_of, month_of, avail, SpeciesCode) %>%
+      summarise(biomass_total_kg = sum(biomass_tree_max_kg),
+                biomass_max_kg_ha = biomass_total_kg/hr_subset$hr_size) # Fernando, the original number here was 791, which should be the total area for which figs were recorded. Replaced by homerangesize
+    
+    fig_biomass_avail_hr <- fig_biomass_max_hr %>%
+      mutate(biomass_monthly_kg = biomass_max_kg_ha * avail)
+    
+    biomass_avail_hr <- bind_rows(biomass_avail_hr, fig_biomass_avail_hr)
+  }
+  
+  ## Finalize table
+  biomass_avail_hr <- biomass_avail_hr %>%
+    mutate(GroupCode = group, GroupPeriod = group_period_label,
+           PeriodStartDate = period_start_date, PeriodEndDate = period_end_date,
+           HR_area = hr_subset$hr_size) %>%
+    select(GroupCode, GroupPeriod, PeriodStartDate, PeriodEndDate, HR_area, everything())
+  
+  return(biomass_avail_hr)
+}
