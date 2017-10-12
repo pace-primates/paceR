@@ -21,9 +21,12 @@ figs <- tbl_df(read.csv("data/FicusData_Nov13_2013.csv"))
 
 
 # Create set of species to exclude
+# exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU",
+#                     "ATIB", "GULM", "LCAN", "LSPE", "FUNK",
+#                     "TRAC")
+
 exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU",
-                    "ATIB", "GULM", "LCAN", "LSPE", "FUNK",
-                    "TRAC")
+                     "ATIB", "GULM", "LCAN", "LSPE", "FUNK")
 
 # Calcuate available biomass using the indices as weights
 biomass_avail_raw <- get_biomass_sr(ph, tr, fpv, figs, exclude_species, smooth = "none")
@@ -96,7 +99,7 @@ tr_pheno_fpv <- transect_subset_sr(tr, pheno, min_dbh)
 
 
 # Count number of usable transect trees for each species
-tr_pheno %>%
+tr_pheno_fpv %>%
   group_by(CodeName) %>%
   filter(usable == TRUE) %>%
   summarise(num_trees = n())

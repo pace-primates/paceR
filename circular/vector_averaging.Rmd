@@ -1,0 +1,105 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Vector averaging
+Some exploration of vector averaging results
+
+```{r, message=FALSE}
+library(paceR)
+library(tidyverse)
+library(circular)
+library(dplyr)
+```
+
+## Create datasets with varying degrees of seasonality
+
+```{r}
+very_sync_12 = data_frame(MonthRadian = rep(seq(from = pi / 6, to = 2 * pi, length.out = 12), 5),
+                          sync = "high_12",
+                          TreesInFr = rep(c(0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0), 5))
+
+bimodal_6_12 = data_frame(MonthRadian = rep(seq(from = pi / 6, to = 2 * pi, length.out = 12), 5),
+                          sync = "bimodal",
+                          TreesInFr = rep(c(0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 2), 5))
+
+very_sync_6 = data_frame(MonthRadian = rep(seq(from = pi / 6, to = 2 * pi, length.out = 12), 5),
+                         sync = "high_6",
+                         TreesInFr = rep(c(0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0), 5))
+
+no_sync= data_frame(MonthRadian = rep(seq(from = pi / 6, to = 2 * pi, length.out = 12), 5),
+                    sync = "no_sync",
+                    TreesInFr = rep(rep(1, 12), 5))
+
+
+# Made some changes to your previous "random" data set
+set.seed(123)
+random_sync = data_frame(MonthRadian = rep(seq(from = pi / 6, to = 2 * pi, length.out = 12), 5),
+                         sync = "random_sync",
+                         TreesInFr = rep(sample(1:12, 12, replace = TRUE), 5))
+
+# Combine datasets
+model_data <-  bind_rows(very_sync_12, bimodal_6_12, very_sync_6, no_sync, random_sync)%>% 
+  mutate(TreesInFr = as.integer(TreesInFr)) %>% 
+  group_by(sync) %>% 
+  mutate(SampleSize = n(), SumOfTreeInFr = sum(TreesInFr)) %>% 
+  ungroup()
+
+
+# Greate a grouped data frame
+model_data <- model_data %>% 
+  group_by(sync) %>% 
+  nest(.key = count_data)
+
+# See what this looks like
+model_data
+
+model_data$count_data[[1]]
+
+
+# This function takes your summarized count data and creates one row per non-zero tree 
+make_tree_based <- function(df) {
+  
+  fruiting <- df %>% 
+    select(MonthRadian, TreesInFr) %>% 
+    filter(TreesInFr != 0)
+  
+  fruiting_unique <- fruiting %>% 
+    distinct(MonthRadian, TreesInFr)
+  
+  n_times <- nrow(fruiting) / nrow(fruiting_unique)
+  
+  res <- data_frame(MonthRadian = rep(rep(fruiting_unique$MonthRadian, 
+                                          times = fruiting_unique$TreesInFr), 
+                                      times = n_times),
+                    HasFruit = 1)
+}
+
+# Apply the function to make individual-based data
+model_data <- model_data %>% 
+  mutate(individual_data = purrr::map(count_data, make_tree_based))
+
+# See what this looks like
+model_data$individual_data[[1]]
+
+
+# This function runs the Rayleigh test of uniformity and returns the test statistic
+rayleigh_test_stat <- function(df) {
+  rt <- suppressWarnings(rayleigh.test(df$MonthRadian))
+  return(rt$statistic)
+}
+
+model_data <- model_data %>%
+  mutate(ray_results = round(purrr::map_dbl(individual_data, rayleigh_test_stat), 2))
+
+
+# View results
+model_data
+
+```
+
+

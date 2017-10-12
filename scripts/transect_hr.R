@@ -1,6 +1,7 @@
 library(paceR)
 library(sp)
 library(sf)
+library(ggthemes)
 
 load_pace_packages()
 
@@ -9,13 +10,13 @@ system("ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N")
 pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
 paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
 
+my_dir <- "data/"
 
 # ---- vertical_transects -------------------------------------------------
 
 tr_full <- get_pace_tbl(pace_db, "tblVegetationTransect")
 tr_pt <- get_pace_tbl(pace_db, "tblVegetationTransectGridPoint")
 
-my_dir <- "data/"
 
 vt <- rgdal::readOGR(dsn = paste0(my_dir, "v_transect_2016.gpx"), layer = "waypoints")
 
@@ -134,7 +135,6 @@ for (i in seq_along(hr_files)) {
  hr_polys[[i]] <- rgdal::readOGR(dsn = paste0(hr_dir, hr_files[i]))
 }
 
-
 tr_overlap <- list(7)
 
 for (i in seq_along(hr_polys)) {
@@ -151,3 +151,61 @@ plot(tran_poly[tran_poly$id %in% tr_overlap[[i]], ], add = TRUE)
 hr_df <- data_frame(id = cap_groups)
 hr_df$tr_ids <- tr_overlap
 hr_df$polys <- hr_polys
+
+
+
+# ---- plots --------------------------------------------------------------
+
+temp <- hr_df %>%
+  select(id, polys) %>%
+  mutate(poly_df = purrr::map(polys, ~fortify(.))) %>%
+  select(-polys) %>%
+  unnest()
+
+temp1 <- hr_df %>%
+  select(id, tr_ids) %>%
+  unnest() %>%
+  left_join(all_tran, by = c("tr_ids" = "ID"))
+
+ggplot() +
+  geom_polygon(data = filter(temp, id %in% c("RM", "GN", "LV")),
+               aes(x = long, y = lat, group = group, fill = hole),
+               color = "black") +
+  geom_segment(data = all_tran,
+               aes(x = start_x, xend = end_x, y = start_y, yend = end_y),
+               size = 0.25, color = "gray70") +
+  geom_segment(data = filter(temp1, id %in% c("RM", "GN", "LV")),
+               aes(x = start_x, xend = end_x, y = start_y, yend = end_y),
+               size = 0.25, color = "black") +
+  facet_wrap(~ id, nrow = 1) +
+  coord_equal() +
+  theme_few() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(1, "cm"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  scale_fill_manual(guide = FALSE, values = c("gray95", "white")) +
+  labs(x = "", y = "")
+
+
+# gplot(hab_stack) +
+#   geom_raster(aes(fill = factor(value))) +
+#   geom_polygon(data = filter(hr_polys, id %in% c("RM", "GN", "LV")),
+#                aes(x = long, y = lat, group = group),
+#                color = "black", fill = NA) +
+#   facet_wrap(~ id, nrow = 1) +
+#   geom_segment(data = tr,
+#                aes(x = start_x, xend = end_x, y = start_y, yend = end_y),
+#                size = 0.25, color = "black") +
+#   scale_fill_manual(name = "Habitat", values = lc_grad,
+#                     labels = c("Open", "Early", "Intermediate", "Late"),
+#                     guide = FALSE) +
+#   coord_equal() +
+#   theme_few() +
+#   theme(legend.position = "bottom", legend.key.width = unit(1, "cm"),
+#         axis.text.x = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.ticks = element_blank()) +
+#   labs(x = "", y = "")
+#
