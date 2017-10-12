@@ -1,7 +1,12 @@
 library(paceR)
 Sys.setenv(TZ = 'UTC')
 
-load_pace_packages()
+# load_pace_packages()
+library(tidyverse)
+library(forcats)
+library(lubridate)
+library(superheat)
+library(RColorBrewer)
 
 system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
 pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
@@ -13,34 +18,98 @@ exclude_species <- c("AEDU", "AOCC", "BPLU", "BPIN", "BUNG", "CGUA", "CPAN",
                      "FUNK", "JPUN", "MARB", "MARG", "MCAL", "PGUA", "RMON",
                      "RTHU", "SPAV", "ACOL")
 
+# For fruits
+exclude_species <- c("SCAP", "SPAV", "CCAN", "BUNG", "HCOU",
+                     "ATIB", "GULM", "LCAN", "LSPE", "FUNK",
+                     "TRAC")
+
 
 # ---- mature_leaves ------------------------------------------------------
 
-pheno <- pheno_prep_sr(ph, exclude_species, item = "Leaf", maturity = "Mature")
+pheno <- pheno_prep_sr(ph, exclude_species, item = "Leaf", maturity = "Immature")
 
 # Freeze at April 2016
-pheno <- filter(pheno, PhenologyDate <= ymd("2016-04-01"))
+pheno <- filter(pheno, DateOf <= ymd("2017-01-01"))
 
-indices_lo <- pheno_avail_indices_sr(pheno, smooth = "loess")
+indices_lo <- pheno_avail_indices_sr(pheno, smooth = "none")
 indices_lo[which(indices_lo$avail > 1), ]$avail <- 1
 
 
-ggplot(indices_lo, aes(x = month_of, y = as.numeric(as.character(year_of)), fill = avail)) +
-  geom_tile(color = "gray50") +
-  scale_fill_gradientn(colours = c("#FFFFFF", brewer.pal(9, "YlOrRd")),
-                       trans = scales::sqrt_trans(),
-                       limits = c(0, 1),
-                       name = "Availability Index") +
-  scale_y_continuous(limits = c(2000, 2016)) +
-  facet_wrap(~SpeciesName, ncol = 7) +
-  theme_minimal() +
-  theme(legend.position = "bottom",
-        strip.background = element_blank(),
-        panel.grid = element_blank(),
-        # axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.key.width = grid::unit(2.5, "cm")) +
-  labs(x = "Month", y = "Year") +
-  coord_polar()
+# ggplot(indices_lo, aes(x = month_of, y = as.numeric(as.character(year_of)), fill = avail)) +
+#   geom_tile(color = "gray50") +
+#   scale_fill_gradientn(colours = c("#FFFFFF", brewer.pal(9, "YlOrRd")),
+#                        trans = scales::sqrt_trans(),
+#                        limits = c(0, 1),
+#                        name = "Availability Index") +
+#   scale_y_continuous(limits = c(2000, 2016)) +
+#   facet_wrap(~SpeciesName, ncol = 7) +
+#   theme_minimal() +
+#   theme(legend.position = "bottom",
+#         strip.background = element_blank(),
+#         panel.grid = element_blank(),
+#         # axis.text.x = element_text(angle = 90, vjust = 0.5),
+#         legend.key.width = grid::unit(2.5, "cm")) +
+#   labs(x = "Month", y = "Year") +
+#   coord_polar()
+
+temp <- indices_lo %>%
+  group_by(year_of, month_of) %>%
+  summarise(mean_avail = mean(avail)) %>%
+  spread(year_of, mean_avail) %>%
+  as.data.frame()
+
+rownames(temp) <- temp$month_of
+temp <- select(temp, -month_of)
+
+avail_monthly <- indices_lo %>%
+  group_by(month_of) %>%
+  summarise(avg_avail_monthly = mean(avail, na.rm = TRUE))
+
+avail_yearly <- indices_lo %>%
+  group_by(year_of) %>%
+  summarise(avail_yearly = mean(avail, na.rm = TRUE))
+
+
+# ---- leaves_plot --------------------------------------------------------
+
+png("~/Desktop/new_leaves.png", width = 1024 * 1.5, height = 768 * 1.5, res = 150)
+superheat(temp,
+          scale = F,
+
+          # Aesthetics
+          title = "Proportion New Leaf Cover",
+          title.size = 8,
+          grid.hline.col = "white",
+          grid.vline.col = "white",
+          bottom.label.text.angle = 90,
+          heat.pal = brewer.pal(9, "YlOrRd"),
+          # legend.breaks = seq(0, 1000, by = 250),
+          left.label.col = "white",
+          bottom.label.col = "white",
+          left.label.text.size = 4,
+          bottom.label.text.size = 4,
+
+          # Right marginal plot
+          yr = avail_monthly$avg_avail_monthly,
+          yr.axis.name = "Monthly",
+          yr.plot.type = "bar",
+          yr.bar.col = "black",
+          yr.obs.col = rep("gray90", nrow(avail_monthly)),
+          yr.plot.size = 0.3,
+
+          # Top marginal plot
+          yt = avail_yearly$avail_yearly,
+          yt.axis.name = "Annual",
+          yt.plot.type = "bar",
+          yt.bar.col = "black",
+          yt.obs.col = rep("gray90", nrow(avail_yearly)),
+          yt.plot.size = 0.4
+          )
+dev.off()
+
+
+
+# ---- next ---------------------------------------------------------------
 
 
 # Vectors

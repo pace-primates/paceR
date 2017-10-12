@@ -11,7 +11,7 @@ devtools::install_github("camposfa/paceR")
 # Load the package
 library(paceR)
 
-# Load data manupulation packages, i.e., the Hadleyverse
+# Load data manupulation packages, i.e., the tidyverse
 load_pace_packages()
 
 # Create the SSH tunnel (modify for your connection)
