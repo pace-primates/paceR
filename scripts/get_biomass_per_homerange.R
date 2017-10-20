@@ -57,14 +57,14 @@ rm(list = c("exclude_species"))
 fpv <- fpv_subset_pheno_sr(fpv, pheno)
 
 # For some species, the following function determines min_dbh.
-# Fernando, I am not sure how this works, but I guess nothing has to be changed here.
+# Urs: Fernando, I am not sure how this works, but I guess nothing has to be changed here.
 min_dbh <- fpv_get_min_dbh_sr(fpv, tr)
 min_dbh <- suppressWarnings(bind_rows(min_dbh, data.frame(code_name = "CGRA", threshold_dbh = 10, n_trees = 1)))
 
 ### 4. Prepare Transect Data  ----
 # 1. Only retain tree species in transects that are also found in pheno
 # 2. Calculate dbh for all trees (fixed dbh for bromeliads)
-# 3. Flag trees that meet the min_dbh criterion as usable,
+# 3. Flag trees that meet the min_dbh criterion as 'usable'
 tr_pheno_fpv <- transect_subset_sr(tr, pheno, min_dbh)
 
 # Get the coordinates of transect and create polygons for all transects
@@ -81,7 +81,7 @@ tr_geom <- tr_to_polys(all_tr_points = all_tr) %>%
   select(-radius) %>%
   arrange(TransectID)
 
-# Fernando, TransectID 346 is missing from transects (you edited this transect in Pacelab a while ago)
+# Urs: Fernando, TransectID 346 is missing from transects (you edited this transect in Pacelab a while ago). Please have a look.
 sort(setdiff(unique(tr$TransectID), unique(tr_geom$TransectID)))
 
 # Add geometries of transects to tr_pheno_fpv
@@ -89,8 +89,8 @@ tr_pheno_fpv <- tr_pheno_fpv %>%
   left_join(tr_geom, by = "TransectID")
 
 # Transects 251 and 319 are missing from tr_pheno_fpv
-# probably becuase there are no pheno trees on these transects.
-# Shouldn't be an issue, but should be kept in mind
+# probably because there are no pheno trees on these transects.
+# Shouldn't be an issue because transect area is calculated from tr_geom not tr_pheno_fpv, but should be kept in mind
 setdiff(tr_geom$TransectID, unique(tr_pheno_fpv$TransectID))
 
 # Clean up
@@ -143,9 +143,9 @@ hr_periods <- hr_sf %>%
          GroupPeriod = paste0(GroupCode, "_", period_nr))
 
 # Then, calculate max and avail biomass per home range and period
-rm(list = c("biomass_hr_temp", "biomass_hr"))
+if(exists("biomass_hr_temp")) rm(biomass_hr_temp)
+if(exists("biomass_hr")) rm(biomass_hr)
 for(i in 1:nrow(hr_periods)) {
-
   biomass_hr_temp <- biomass_avail_hr(group = hr_periods[i,]$GroupCode,
                                       period_start_date = hr_periods[i,]$start_date,
                                       period_end_date = hr_periods[i,]$end_date,
