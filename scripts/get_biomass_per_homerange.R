@@ -160,3 +160,11 @@ for(i in 1:nrow(hr_periods)) {
   }
 }
 rm(biomass_hr_temp)
+
+# Description of output:
+# 'biomass_total_kg'  = sum(ProportionOfTreeInTransect * 47 * dbh^1.9)/1000
+#                     = Max. avail. biomass per tree species for all transects within home range
+#                     using the formula from Peters et al. 1988
+# 'biomass_max_kg_ha' = 'biomass_total_kg'/'transect area' = max. biomass per hectare
+# 'biomass_monthly_kg' = biomass per hectar ('avail' * 'biomass_max_kg_ha')
+# 'area total' = sum(sum(abh)) = total area at breast height of all stems of one tree species within homerange
