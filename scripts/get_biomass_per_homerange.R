@@ -144,6 +144,7 @@ hr_periods <- hr_sf %>%
 
 # Then, calculate max and avail biomass per home range and period
 # TO DO: Add hr_type_incl into output file
+# TO DO: Add included transects (IDs) to the output?
 if(exists("biomass_hr_temp")) rm(biomass_hr_temp)
 if(exists("biomass_hr")) rm(biomass_hr)
 for(i in 1:nrow(hr_periods)) {
