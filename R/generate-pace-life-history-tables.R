@@ -17,7 +17,7 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
   death <- get_pace_tbl(paceR_db, "vDeath") %>% 
     mutate (DateOfDeathFinal = ifelse (!is.na (DateOfDeath), DateOfDeath,
                                        ifelse (!is.na(DateOfDeathFromCensus), DateOfDeathFromCensus, NA))) %>%
-    select (-DateOfDeath, - DateOfDeathFromCensus)
+    select (-DateOfDeath, - DateOfDeathFromCensus, -ProjectID, -NameOf)
   
   monthlycensus <- getv_CensusMonthly (paceR_db) %>% 
     filter (ProjectID %in% projectID & !is.na (IndividID))
@@ -39,7 +39,6 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
   censusbio <- lastalive %>%
     full_join (lastcensus, by = "IndividID") %>%
     arrange (IndividID)
-  # mutate (diff = difftime (lastcensus, lastalive, units = "days"))
 
   biography <- death %>%
     left_join (individs, ., by = "IndividID") %>%
@@ -53,7 +52,7 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
           DepartDate, DepartType, CauseOfDeath, DeathComments, GroupLastAlive,  GroupLastListed) %>% 
   # sorted out:  CodeName, IndividualDeathID, CauseOfDeathID, DeathSourceOfInformation
   # DateOfDeathFinal, FirstAlive, LastAlive, LastCensus, LastStatus
-  mutate_each (funs (as.Date), DateOfBirth, DateOfFirstSighting, DepartDate)
+  mutate_at (c("DateOfBirth", "DateOfFirstSighting", "DepartDate"), as.Date) 
 
   if(!full){
     biography <- biography %>%

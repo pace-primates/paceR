@@ -1,5 +1,5 @@
-# Loads various packages required to estimate biomass per homerange
-
+#' Loads various packages required to estimate biomass per homerange
+#'
 #'
 #' @export
 #' @examples
@@ -20,8 +20,8 @@ load_hr_biomass_packages <- function(...)
 
 
 
-# Calculate home ranges for time intervals
-
+#' Calculate home ranges for time intervals
+#'
 #' (Use intervals that start on first of month when used with phenology)
 #'
 #' @param ranging_waypoint Table with ranging waypoint - MORE SPECIFICS
@@ -315,7 +315,7 @@ get_homerange <- function (ranging_waypoints, start_date = NULL, ints_per_year =
   }
 }
 
-# Updated BRB code
+#' Updated BRB code
 #'
 #' @param x definition
 #' @param start.date definition
