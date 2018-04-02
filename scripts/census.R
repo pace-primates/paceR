@@ -9,9 +9,8 @@ library(forcats)
 library(lubridate)
 library(RColorBrewer)
 
-# system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
-pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
-paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
+pace_db <- DBI::dbConnect(RMySQL::MySQL(), group = "PACE", user = "camposf", dbname = "monkey")
+paceR_db <- DBI::dbConnect(RMySQL::MySQL(), group = "PACE", user = "camposf", dbname = "paceR")
 
 census <- get_pace_tbl(paceR_db, "vCensusAnnual")
 
@@ -124,6 +123,127 @@ d_alo_summary <- d_alo %>%
   spread(AgeSexClass, n) %>%
   mutate(af_inf = AdultFemale / Infant,
          af_imm = AdultFemale / (Infant + Juvenile))
+
+
+
+d_ceb <- census %>%
+  filter(UseForDemography == 1 & Species == "Capuchins") %>%
+  unite(AgeSexClass, AgeClass, Sex)
+
+d_ceb$AgeSexClass <- fct_collapse(d_ceb$AgeSexClass,
+                                  "AdultFemale" = "A_F",
+                                  "AdultMale" = "A_M",
+                                  "SubAdultMale" = "SA_M",
+                                  "LImm" = c("LIM_U", "LIM_F", "LIM_M"),
+                                  "SImm" = c("SIM_U", "SIM_F", "SIM_M"),
+                                  "Juv" = c("J_U"),
+                                  "Infant" = c("I_U", "ID_U", "II_U", "I_F", "I_M"),
+                                  "Unknown" = "U_U",
+                                  "Unborn" = "UB_U")
+d_ceb_summary <- d_ceb %>%
+  filter(YearOfCensus %ni% bad_years) %>%
+  group_by(YearOfCensus, AgeSexClass) %>%
+  summarise(n = sum(N))
+
+d_ceb_summary %>%
+  ungroup() %>%
+  group_by(AgeSexClass) %>%
+  mutate(diff = n - lag(n),
+         prop_diff = 100 * (diff / lag(n))) %>%
+  select(-diff, -prop_diff) %>%
+  spread(AgeSexClass, n) %>%
+  View()
+
+d_ceb_plot <- filter(d_ceb_summary, AgeSexClass %ni% c("Unknown", "UB_U", "Juv"))
+
+d_ceb_plot$AgeSexClass <- fct_collapse(d_ceb_plot$AgeSexClass,
+                                     "Adult Male" = c("AdultMale",
+                                                      "SubAdultMale"))
+
+d_ceb_plot$AgeSexClass <- fct_recode(d_ceb_plot$AgeSexClass,
+                                     "Adult Female" = "AdultFemale",
+                                     "Large Immature" = "LImm",
+                                     "Small Immature" = "SImm")
+
+d_ceb_plot <- d_ceb_plot %>%
+  ungroup() %>%
+  group_by(YearOfCensus, AgeSexClass) %>%
+  summarise(n = sum(n)) %>%
+  ungroup() %>%
+  group_by(YearOfCensus) %>%
+  mutate(prop = n / sum(n, na.rm = TRUE))
+
+d_ceb_plot$AgeSexClass <- factor(d_ceb_plot$AgeSexClass,
+                                 levels = c("Adult Female",
+                                            "Adult Male",
+                                            "Large Immature",
+                                            "Small Immature",
+                                            "Infant"))
+
+census_years <- as.numeric(levels(factor(d_ceb_plot$YearOfCensus)))
+
+ggplot(d_ceb_plot, aes(x = YearOfCensus, y = prop)) +
+  geom_line(size = 1) +
+  geom_point(shape = 21, fill = "black", color = "white", size = 2,
+             stroke = 0.75) +
+  facet_grid(AgeSexClass ~ .) +
+  theme_journal() +
+  scale_x_continuous(breaks = census_years) +
+  labs(x = "Year", y = "Proportion of Population") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(d_ceb_plot, aes(x = YearOfCensus, y = prop, fill = AgeSexClass)) +
+  geom_area(stat = "identity", position = "stack") +
+  theme_journal() +
+  scale_x_continuous(breaks = census_years) +
+  labs(x = "Year", y = "Proportion of Population") +
+  scale_fill_brewer(palette = "Set1", name = NULL) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+d_ceb_grp <- d_ceb %>%
+  filter(YearOfCensus %ni% bad_years) %>%
+  group_by(YearOfCensus) %>%
+  mutate(n_grps = n_distinct(GroupID))
+
+d_ceb_grp <- filter(d_ceb_grp,
+                    AgeSexClass %ni% c("Unknown", "UB_U", "Juv"))
+
+d_ceb_grp$AgeSexClass <- fct_collapse(d_ceb_grp$AgeSexClass,
+                                      "Adult Male" = c("AdultMale",
+                                                       "SubAdultMale"))
+
+d_ceb_grp$AgeSexClass <- fct_recode(d_ceb_grp$AgeSexClass,
+                                    "Adult Female" = "AdultFemale",
+                                    "Large Immature" = "LImm",
+                                    "Small Immature" = "SImm")
+
+d_ceb_grp <- d_ceb_grp %>%
+  group_by(YearOfCensus, AgeSexClass) %>%
+  summarise(n_indivs = sum(N),
+            n_grps = first(n_grps)) %>%
+  ungroup() %>%
+  mutate(n_per_grp = n_indivs / n_grps)
+
+d_ceb_grp$AgeSexClass <- factor(d_ceb_grp$AgeSexClass,
+                                levels = c("Adult Female",
+                                           "Adult Male",
+                                           "Subadult Male",
+                                           "Large Immature",
+                                           "Small Immature",
+                                           "Infant"))
+
+ggplot(d_ceb_grp, aes(x = YearOfCensus, y = n_per_grp)) +
+  geom_line(size = 1) +
+  geom_point(shape = 21, fill = "black", color = "white", size = 2,
+             stroke = 0.75) +
+  facet_grid(AgeSexClass ~ .) +
+  theme_journal() +
+  scale_x_continuous(breaks = census_years) +
+  labs(x = "Year", y = "Individuals Per Group") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(breaks = 0:6) +
+  expand_limits(y = 0)
+
 
 outl <- filter(d_alo_summary, YearOfCensus == 2011)
 
