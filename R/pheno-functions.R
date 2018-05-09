@@ -589,7 +589,7 @@ get_biomass_sr <- function(ph = NULL, tr = NULL, fpv = NULL, figs = NULL, exclud
   fpv <- fpv_subset_pheno_sr(fpv, pheno)
 
   # Fix minimum DBHs (currently done manually, need to verify)
-  min_dbh <- fpv_get_min_dbh_sr(fpv)
+  min_dbh <- fpv_get_min_dbh_sr(fpv, tr)
 
   # Currently, no min DBH for CGRA due to absence in FPVs
   # Must set manually
@@ -708,42 +708,42 @@ vector.averaging <-  function(direction, distance, deg = TRUE) {
 #'
 #' @export
 get_vertical_transects <- function(tr_full, data_dir = "data/") {
-  
+
   # Use gps points from file
   vt <- rgdal::readOGR(dsn = paste0(data_dir, "v_transect_2016.gpx"), layer = "waypoints")
   vt2 <- spTransform(vt, CRSobj = CRS("+init=epsg:32616"))
-  
+
   vt_df <- tbl_df(vt2) %>%
     select(name, x = coords.x1, y = coords.x2)
-  
+
   vt_df <- vt_df %>%
     mutate(endpoint = str_extract(name, "[a-zA-z]+"))
-  
+
   vt_df$name <- str_replace(vt_df$name, "End.", "")
   vt_df$name <- str_replace(vt_df$name, "Start.", "")
-  
+
   vt_df <- vt_df %>%
     group_by(name) %>%
     mutate(endpoint = case_when(y == min(y) ~ "S.",
                                 y == max(y) ~ "N."))
-  
+
   vt_df <- unite(vt_df, endpoint, endpoint, name, sep = "")
-  
+
   v_res <- select(tr_full, TransectID, TransectBegin, TransectEnd) %>%
     inner_join(vt_df, by = c("TransectBegin" = "endpoint")) %>%
     rename(start_x = x, start_y = y)
-  
+
   v_res <- v_res %>%
     inner_join(vt_df, by = c("TransectEnd" = "endpoint")) %>%
     rename(end_x = x, end_y = y)
-  
+
   v_res <- v_res %>%
     mutate(transect = str_extract(TransectBegin, "[0-9]+"))
-  
+
   tr_v <- select(v_res, -TransectBegin, -TransectEnd)
-  
+
   tr_v$transect <- paste0("v_", tr_v$transect)
-  
+
   # Set width
   tr_v$radius <- 2
   return(tr_v)
@@ -757,30 +757,30 @@ get_vertical_transects <- function(tr_full, data_dir = "data/") {
 #'
 #' @export
 get_horizontal_transects <- function(tr_full, tr_pt) {
-  
+
   tr_begin <- tr_full %>%
     select(TransectID, matches("Grid")) %>%
     inner_join(select(tr_pt, ID, GpsUtm), by = c("GridPointBeginID" = "ID")) %>%
     separate(GpsUtm, into = c("zone", "char", "x", "y"), sep = " ") %>%
     rename(start_x = x, start_y = y) %>%
     select(-matches("Grid"), -zone, -char)
-  
+
   tr_end <- tr_full %>%
     select(TransectID, matches("Grid")) %>%
     inner_join(select(tr_pt, ID, GpsUtm), by = c("GridPointEndID" = "ID")) %>%
     separate(GpsUtm, into = c("zone", "char", "x", "y"), sep = " ") %>%
     rename(end_x = x, end_y = y) %>%
     select(-matches("Grid"), -zone, -char)
-  
+
   tr_h <- inner_join(tr_begin, tr_end, by = "TransectID")
-  
+
   tr_h$transect <- paste0("h_", tr_h$TransectID)
-  
+
   tr_h <- mutate_at(tr_h, vars(-transect, -TransectID), as.numeric)
-  
+
   # Set width
   tr_h$radius <- 1
-  
+
   # tr_h <- rename(tr_h, TransectID = ID)
   return(tr_h)
 }
@@ -793,31 +793,31 @@ get_horizontal_transects <- function(tr_full, tr_pt) {
 #' @examples
 #' tr_to_polys <- function(all_tr_points)
 tr_to_polys <- function(all_tr_points){
-  
+
   # First, define function to transform start- and end-points to lines
   get_line <- function(df) {
     res <- st_linestring(cbind(c(df$start_x, df$end_x), c(df$start_y, df$end_y)))
     return(res)
   }
-  
+
   # Transform points into lines
   temp <- all_tr_points %>%
     group_by(TransectID, radius) %>%
     nest() %>%
     mutate(lines = purrr::map(data, ~ get_line(.)))
-  
+
   # Use UTM zone 16 as projection, and turn into sf-dataframe
   tran_lines <- temp$lines %>%
     st_sfc(crs = 32616)
-  
+
   tran_lines <- st_as_sf(data.frame(TransectID = temp$TransectID, radius = temp$radius), tran_lines)
-  
+
   # Use sp package To make rectangles with respective width (capStyle flat not yet inlcuded into sf)
   tran_sl <- as(tran_lines, "Spatial")
-  
+
   tran_poly <- rgeos::gBuffer(tran_sl, byid = TRUE, capStyle = "flat",
                               width = tran_sl$radius)
-  
+
   return(tran_poly)
 }
 
@@ -829,26 +829,26 @@ tr_to_polys <- function(all_tr_points){
 #' @export
 
 figs_to_sf <- function(figs){
-  
+
   # Define function to turn x and y coords into st_point
   get_point <- function(df){
     st_point(c(df$UtmEasting, df$UtmNorthing))
   }
-  
+
   # Create column with sf_points
-  temp <- figs %>% 
+  temp <- figs %>%
     group_by(Name) %>%
-    nest() %>% 
+    nest() %>%
     mutate(geom = purrr::map(data, ~get_point(.)))
-  
+
   # Create sf dataframe
   figs_sf <- temp %>%
-    mutate(geom = st_sfc(geom)) %>% 
-    unnest(data) %>% 
+    mutate(geom = st_sfc(geom)) %>%
+    unnest(data) %>%
     st_sf()
-  
+
   st_crs(figs_sf) <- 32616
-  
+
   return(figs_sf)
 }
 
@@ -874,46 +874,46 @@ figs_to_sf <- function(figs){
 biomass_avail_hr <- function (group, period_start_date, period_end_date, group_period_label,
                               hr_type_incl = 95,
                               hr_sf, tr_geom, tr_pheno_fpv, indices, figs_sf){
-  
+
   # Get the homerange polygon
   hr_subset <- hr_sf %>%
     filter(GroupCode == group &
              start_date == period_start_date &
              hr_type == hr_type_incl) %>%
     mutate(hr_size = as.numeric(st_area(geometry)/10000))
-  
+
   if(nrow(hr_subset) != 1) stop("More or less than one homerange and period selected")
   # Only use the transects from tr_geom that intersect with the homerange
   tr_intersecting <- tr_geom %>%
     filter(st_intersects(.$geometry, hr_subset$geometry) == 1)
-  
+
   # Calculate transect area for these transects
   tr_subset_hr_area = sum((distinct(tr_intersecting, TransectID, .keep_all = T))$tr_area)/10000
-  
+
   # Use intersecting TransectIDs to filter tr_pheno_fpv
   tr_pheno_fpv_subset <- tr_pheno_fpv %>%
     filter(TransectID %in% tr_intersecting$TransectID)
-  
+
   # Then calculate the max biomass for these transects
   biomass_max_hr <- biomass_max_sr(tr_pheno_fpv_subset, tr_subset_hr_area)
-  
+
   ## Filter pheno indices (only include indices for months within the hr period)
   # First, create a table with all month and year combination for the study period
   study_months <- as.tibble(seq(period_start_date, ceiling_date(period_end_date, unit = "month"), by = "month")) %>%
     mutate(year_of = year(value),
            month_of = month(value))
-  
+
   # Then, filter the indices
   indices_subset <- indices %>%
     mutate(year_of = as.numeric(as.character(year_of)),
            month_of = as.numeric(match(month_of, month.abb))) %>%
     inner_join(., select(study_months, year_of, month_of),
                by = c("year_of", "month_of"))
-  
+
   # Calculate available biomass for homerange
   biomass_avail_hr <- biomass_avail_sr(biomass_max_hr, indices_subset)
-  
-  
+
+
   ## Recalculate fig biomass
   if (!is.null(figs_sf)) {
     biomass_avail_hr <- biomass_avail_hr %>% filter(!str_detect(SpeciesName, "Ficus"))
@@ -922,29 +922,29 @@ biomass_avail_hr <- function (group, period_start_date, period_end_date, group_p
       filter(st_intersects(.$geom, hr_subset$geometry) == 1) %>%
       filter(!is.na(VirtualFicusCBH)) %>%
       mutate(dbh = VirtualFicusCBH/pi, biomass_tree_max_kg = (47 * dbh^1.9)/1000)
-    
+
     fig_data <- suppressWarnings(inner_join(fig_indices_subset,
                                             fig_data, by = "SpeciesCode"))
-    
-    
+
+
     fig_biomass_max_hr <- fig_data %>%
       ungroup() %>%
       group_by(SpeciesName, year_of, month_of, avail, SpeciesCode) %>%
       summarise(biomass_total_kg = sum(biomass_tree_max_kg),
                 biomass_max_kg_ha = biomass_total_kg/hr_subset$hr_size) # Fernando, the original number here was 791, which should be the total area for which figs were recorded. Replaced by homerangesize
-    
+
     fig_biomass_avail_hr <- fig_biomass_max_hr %>%
       mutate(biomass_monthly_kg = biomass_max_kg_ha * avail)
-    
+
     biomass_avail_hr <- bind_rows(biomass_avail_hr, fig_biomass_avail_hr)
   }
-  
+
   ## Finalize table
   biomass_avail_hr <- biomass_avail_hr %>%
     mutate(GroupCode = group, GroupPeriod = group_period_label,
            PeriodStartDate = period_start_date, PeriodEndDate = period_end_date,
            HR_area = hr_subset$hr_size) %>%
     select(GroupCode, GroupPeriod, PeriodStartDate, PeriodEndDate, HR_area, everything())
-  
+
   return(biomass_avail_hr)
 }
