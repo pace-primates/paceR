@@ -345,16 +345,6 @@ fpv_get_min_dbh_sr <- function(fpv = NULL, tr = NULL) {
   min_dbh[min_dbh$code_name == "SOBO", ]$threshold_dbh <-
     head(subset(fpv, code_name == "SOBO"))$dbh[2]
 
-
-  min_dbh[min_dbh$code_name == "TAME", ]$threshold_dbh <-
-    rev(sort(subset(tr, SpeciesName == "Trichilia americana")$Dbh))[1]
-
-  min_dbh[min_dbh$code_name == "SEXC", ]$threshold_dbh <-
-    rev(sort(subset(tr, SpeciesName == "Sciadodendron excelsum")$Dbh))[1]
-
-  min_dbh[min_dbh$code_name == "SGLN", ]$threshold_dbh <-
-    rev(sort(subset(tr, SpeciesName == "Sapium glandulosum")$Dbh))[2]
-
   return(min_dbh)
 
 }
