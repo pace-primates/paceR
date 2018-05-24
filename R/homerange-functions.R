@@ -150,12 +150,9 @@ get_habitat_use <- function (ranging_waypoints, start_date = NULL, ints_per_year
   # for each group? We do this by joining to ran_df
   temp <- left_join(ob_all, ran_df, by = "id")
 
-  # Create date interval for filtering
-  temp$date_interval <- interval(temp$date_begin, temp$date_end)
-
   # Count number of points for each group in each date interval
   ob_all <- temp %>%
-    filter(date_of %within% date_interval) %>%
+    filter(as.Date(date_of) >= date_begin & as.Date(date_of) <= date_end) %>% 
     group_by(id, block_type, date_begin, date_end) %>%
     summarise(nb_reloc = n()) %>%
     ungroup

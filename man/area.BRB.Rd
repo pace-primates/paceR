@@ -45,6 +45,8 @@ area.BRB(x = NULL, start.date = NULL, end.date = NULL, hab = NULL,
 \item{vv}{definition}
 }
 \description{
+Updated BRB code
+
 For the original function, see adehabitatHR::BRB
 }
 \examples{

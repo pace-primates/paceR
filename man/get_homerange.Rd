@@ -2,7 +2,7 @@
 % Please edit documentation in R/get-homerange.R
 \name{get_homerange}
 \alias{get_homerange}
-\title{(Use intervals that start on first of month when used with phenology)}
+\title{Calculate home ranges for time intervals}
 \usage{
 get_homerange(ranging_waypoints, start_date = NULL, ints_per_year = 1,
   hr_periods = NULL, min_nb_reloc = NULL, output = c("ud", "hr", "ob"))
