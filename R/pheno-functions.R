@@ -875,7 +875,7 @@ biomass_avail_hr <- function (group, period_start_date, period_end_date, group_p
   if(nrow(hr_subset) != 1) stop("More or less than one homerange and period selected")
   # Only use the transects from tr_geom that intersect with the homerange
   tr_intersecting <- tr_geom %>%
-    filter(st_intersects(.$geometry, hr_subset$geometry) == 1)
+    filter(st_intersects(.$geometry, hr_subset$geometry, sparse = FALSE) == TRUE)
 
   # Calculate transect area for these transects
   tr_subset_hr_area = sum((distinct(tr_intersecting, TransectID, .keep_all = T))$tr_area)/10000
@@ -909,7 +909,7 @@ biomass_avail_hr <- function (group, period_start_date, period_end_date, group_p
     biomass_avail_hr <- biomass_avail_hr %>% filter(!str_detect(SpeciesName, "Ficus"))
     fig_indices_subset <- indices_subset %>% filter(str_detect(SpeciesName, "Ficus"))
     fig_data <- figs_sf %>%
-      filter(st_intersects(.$geom, hr_subset$geometry) == 1) %>%
+      filter(st_intersects(.$geom, hr_subset$geometry, sparse = FALSE) == TRUE) %>%
       filter(!is.na(VirtualFicusCBH)) %>%
       mutate(dbh = VirtualFicusCBH/pi, biomass_tree_max_kg = (47 * dbh^1.9)/1000)
 
