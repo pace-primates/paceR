@@ -91,6 +91,14 @@ ggplot(all_tran, aes(x = start_x, xend = end_x, y = start_y, yend = end_y)) +
   coord_equal() +
   theme_void()
 
+ggplot(all_tran) +
+  geom_segment(aes(x = start_x, xend = end_x, y = start_y, yend = end_y)) +
+  geom_point(aes(x = start_x, y = start_y), size = 0.75) +
+  geom_point(aes(x = end_x, y = end_y), size = 0.75) +
+  coord_equal(xlim = c(min(all_tran$start_x), 652800)) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal()
+
 write_csv(all_tran, paste0(my_dir, "all_transects.csv"))
 
 
@@ -209,3 +217,34 @@ ggplot() +
 #         axis.ticks = element_blank()) +
 #   labs(x = "", y = "")
 #
+
+ggplot() +
+  geom_polygon(data = filter(temp, id %in% c("RM", "GN", "LV")),
+               aes(x = long, y = lat, group = group, fill = hole),
+               color = "black") +
+  geom_segment(data = all_tran,
+               aes(x = start_x, xend = end_x, y = start_y, yend = end_y),
+               size = 0.25, color = "gray70") +
+  geom_point(data = all_tran,
+             aes(x = start_x, y = start_y),
+             size = 0.25, color = "gray70") +
+  geom_point(data = all_tran,
+             aes(x = end_x, y = end_y),
+             size = 0.25, color = "gray70") +
+  geom_segment(data = filter(temp1, id %in% c("RM", "GN", "LV")),
+               aes(x = start_x, xend = end_x, y = start_y, yend = end_y),
+               size = 0.25, color = "black") +
+  geom_point(data = filter(temp1, id %in% c("RM", "GN", "LV")),
+               aes(x = start_x, y = start_y),
+               size = 0.25, color = "black") +
+  geom_point(data = filter(temp1, id %in% c("RM", "GN", "LV")),
+             aes(x = end_x, y = end_y),
+             size = 0.25, color = "black") +
+  facet_wrap(~ id, nrow = 1) +
+  # geom_segment(aes(x = start_x, xend = end_x, y = start_y, yend = end_y)) +
+  # geom_point(aes(x = start_x, y = start_y), size = 0.75) +
+  # geom_point(aes(x = end_x, y = end_y), size = 0.75) +
+  coord_equal(xlim = c(min(all_tran$start_x) - 500, 652800)) +
+  scale_fill_manual(guide = FALSE, values = c("gray95", "white")) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal()
