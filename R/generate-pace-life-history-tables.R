@@ -17,7 +17,7 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
   death <- get_pace_tbl(paceR_db, "vDeath") %>% 
     mutate (DateOfDeathFinal = ifelse (!is.na (DateOfDeath), DateOfDeath,
                                        ifelse (!is.na(DateOfDeathFromCensus), DateOfDeathFromCensus, NA))) %>%
-    select (-DateOfDeath, - DateOfDeathFromCensus)
+    select (-DateOfDeath, - DateOfDeathFromCensus, -NameOf, -ProjectID)
   
   monthlycensus <- getv_CensusMonthly (paceR_db) %>% 
     filter (ProjectID %in% projectID & !is.na (IndividID))
@@ -53,7 +53,7 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
           DepartDate, DepartType, CauseOfDeath, DeathComments, GroupLastAlive,  GroupLastListed) %>% 
   # sorted out:  CodeName, IndividualDeathID, CauseOfDeathID, DeathSourceOfInformation
   # DateOfDeathFinal, FirstAlive, LastAlive, LastCensus, LastStatus
-  mutate_each (funs (as.Date), DateOfBirth, DateOfFirstSighting, DepartDate)
+  mutate_at(c("DateOfBirth", "DateOfFirstSighting", "DepartDate"), as.Date) 
 
   if(!full){
     biography <- biography %>%
@@ -112,7 +112,7 @@ get_infant_table <- function(paceR_db, full = TRUE, projectID = 1){
   
   amt <- getv_AlphaMaleTenure (paceR_db) %>% 
     filter (GroupCode %in% c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")) %>%
-    mutate_each (funs (as.Date), AMT_DateBegin, AMT_DateEnd, AlphaMaleDOB)
+    mutate_at(c("AMT_DateBegin", "AMT_DateEnd", "AlphaMaleDOB"), as.Date) 
     
   # CP fissioned into CPAD and CPRM on 2013-01-01 -> query takes into account
   # whether alpha in new groups is the same as before fission
@@ -202,7 +202,7 @@ get_infant_table <- function(paceR_db, full = TRUE, projectID = 1){
     mutate (RiskDate = as.Date (RiskDate), # Transform back to date as joining is done
             BirthRisk = ifelse (!is.na (TER), as.character(TER), as.character(TSR)),
             InfanticideRisk_Begin = ifelse (BirthRisk == "GS_unknown", New_AMT_Begin, Old_AMT_End)) %>% 
-    mutate_each (funs (as.Date (., origin = "1970-01-01")), New_AMT_Begin, Old_AMT_End, InfanticideRisk_Begin) %>% 
+    mutate_at(c("New_AMT_Begin", "Old_AMT_End", "InfanticideRisk_Begin"), funs(as.Date (., origin = "1970-01-01"))) %>% 
     arrange (GroupCode, RiskDate) %>% 
     select (GroupCode, RiskDate, BirthRisk, InfanticideRisk_Begin, New_AM, New_AMT_Begin, Old_AM, Old_AMT_End)
   
