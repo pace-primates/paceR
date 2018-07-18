@@ -8,8 +8,7 @@
 
 get_focaldata_MB <- function(paceR_db, full = TRUE){
   
-  focal_MB <- get_pace_tbl(paceR_db, "vFocalData", collect = FALSE) %>%
-    filter (SubProjectID == 13) %>% 
+  focal_MB <- get_pace_tbl(paceR_db, "vFocalData_MB", collect = FALSE) %>%
     # Only use focals with females as focals with males only test-focals
     filter (Sex == "F") %>% 
     # Filter out Focal with "Nymphadora Tonks" --> was focal with unknown female "Tonks" and should be corrected in pacelab
@@ -95,13 +94,13 @@ get_focaldata_MB <- function(paceR_db, full = TRUE){
            StateBegin, StateEnd, StateDuration,
            StateVisibilityStatus, StateSpeciesName, StateKingdom, StateBehavName,  
            BehavBegin, BehavEnd, BehavDuration,
-           BehavClassNameOf, BehavName, EndedByBehavName,
+           BehavClassName, BehavName, EndedByBehavName,
            IndividID, Sex, DateOfBirth, AgeAtFocal, NameOf,
            Role, IndividRole, InteractRole, 
            InteractID, InteractNameOf, InteractSex, InteractDateOfBirth, InteractAgeAtFocal, 
            InteractSpeciesName, InteractKingdom,
-           FocalComments, BehaviourComments, ResearcherNameLast,
-           SessionDayID, ProjectID, SubProjectID, ContactID,
+           FocalComments, BehaviourComments, ResearcherNameLast = DataObserverNameLast,
+           SessionDayID, SubProjectID, ContactID,
            FocalID, FocalStateID, FocalBehavID, FocalBehavInteractID)
  
  
@@ -113,15 +112,15 @@ get_focaldata_MB <- function(paceR_db, full = TRUE){
              StateBegin, StateEnd, StateDuration,
              StateVisibilityStatus, StateSpeciesName, StateKingdom, StateBehavName,
              BehavBegin, BehavEnd, BehavDuration,
-             BehavClassNameOf, BehavName,
+             BehavClassName, BehavName,
              DateOfBirth, AgeAtFocal, NameOf,
              Role, IndividRole, InteractRole,
              InteractNameOf, InteractSex, InteractDateOfBirth, InteractAgeAtFocal,
              InteractSpeciesName, InteractKingdom,
              FocalComments, BehaviourComments, ResearcherNameLast,
-             SessionDayID, ProjectID, SubProjectID, ContactID,
+             SessionDayID, SubProjectID, ContactID,
              FocalID, FocalStateID, FocalBehavID, FocalBehavInteractID)
-    
+   
  }
  print("Rafiki and RafikiNew are not distinguished --> Check for date of his disappearance replace him by RafikiNew afterwards")
 return (focal_MB)
