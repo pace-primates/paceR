@@ -76,8 +76,181 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 }
 
 
+#' Get table with infants including the risk of infanticide as a consequence of
+#' alpha male reversals - NEW FUNCTION!!!
+#'
+#' This function determines: 1) Alpha male (AM) at the time of birth, 2) days
+#' since AM has been AM, 3) following AM, and 4) days from DOB until next AM
+#' becomes AM
+#'
+#' @param paceR_db The src_mysql connection to the paceR Database
+#'   (view-collection).
+#' @param full Option to return the full table (TRUE) or just a condensed
+#'   version (FALSE). Default is TRUE. CURRENTLY NOT USED.
+#'
+#' @export
+#' @examples
+#' get_infant_table (paceR_db)
+
+get_infant_table <- function(paceR_db, full = TRUE){
+  message("This is the new `get_infant_table` function. For the old one, use `get_infant_table.old`")
+  # Define Capuchin groups to be included
+  included_group <- c("LV", "EXCL", "GUAN", "SEND", "CP", "CPAD", "CPRM")
+  
+  ### Get and prep biography data from the the PACE database ----------------------------------------------
+  infant_biography <- get_biography(paceR_db) %>%
+    filter (!is.na(DateOfBirth) & GroupAtBirthCode %in% included_group) %>%
+    select (InfantID = IndividID, NameOf, Mother, DOB = DateOfBirth, 
+            Sex = Sex, GroupAtBirthCode, DepartDate, DepartType,
+            GroupLastListed, CauseOfDeath, DeathComments)
+  
+  # Group After CP fission?
+  # Use monthly census data to find out in which groups individuals went after the CP fission (Jan 2013),
+  # Use the group (CPAD or CPRM) in which individuals appear more often in 2013.
+  # Usually, they only appear in one group. Only Jafar listed in CPAD in Feb and March, but then always in CPRM.
+  group_after_cp_fission <- get_pace_tbl(paceR_db, "vCensusMonthly", collect = FALSE) %>% 
+    filter(ProjectID == 1, GroupCode %in% c("CPAD", "CPRM"),
+           CensusYear == 2013, StatusCodeLong == "Alive") %>% 
+    group_by(NameOf, CensusYear, GroupCode) %>% count() %>% 
+    collect() %>% 
+    group_by(NameOf) %>% 
+    filter(n == max(n)) %>% 
+    ungroup %>% 
+    select(NameOf, GroupAfterFissionCode = GroupCode)
+  
+  # Add the GroupAfterFissionCode to the infant_biography table.
+  infant_biography <- infant_biography %>% 
+    left_join(group_after_cp_fission, by = "NameOf")
+  
+  ### Get and prep alpha male tenure data from the the PACE database ----------------------------------
+  amt <- getv_AlphaMaleTenure (paceR_db) %>% 
+    filter (GroupCode %in% included_group) %>%
+    mutate_at(c("AMT_DateBegin", "AMT_DateEnd", "AlphaMaleDOB"), as.Date) %>% 
+    select(-AlphaMaleID, -AlphaMaleDOB, -AlphaMaleTenureID)
+  
+  # Add "No Alpha Male" into the gaps between alpha males (for gaps of at least 10 days)
+  no_alpha_males <- amt %>% 
+    group_by(GroupCode) %>% 
+    mutate(alphagap = difftime(lead(AMT_DateBegin), AMT_DateEnd, unit = "days"),
+           AMT_DateBegin.new = AMT_DateEnd, AMT_DateEnd.new = lead(AMT_DateBegin),
+           AlphaMale.new = "No Alpha Male", AMT_Comments.new = "Added this line because of alpha-male-gap > 9 days") %>% 
+    ungroup %>% 
+    filter(alphagap > 9) %>% 
+    select(GroupCode, GroupName, AMT_DateBegin = AMT_DateBegin.new, AMT_DateEnd = AMT_DateEnd.new,
+           AlphaMale = AlphaMale.new, AMT_Comments = AMT_Comments.new)
+  
+  amt <- bind_rows(amt, no_alpha_males) %>% 
+    arrange(GroupCode, AMT_DateBegin)
+  
+  # Get some dates about Legola's tenure in CP and CPRM to correct issues because of fission below
+  legolas_cp_start <- filter(amt, GroupCode == "CP" & AlphaMale == "Legolas")$AMT_DateBegin
+  legolas_cprm_start_1 <- filter(amt, GroupCode == "CPRM" & AlphaMale == "Legolas")$AMT_DateBegin[1]
+  legolas_cprm_end_1 <- filter(amt, GroupCode == "CPRM" & AlphaMale == "Legolas")$AMT_DateEnd[1]
+  
+  ### For each infant, determine AM and AM tenure start at birth -------------------------------------------------
+  
+  # Step 1: Join infant table with amt table
+  
+  # Step 2: Correct issues with Legolas because of CP-fission:
+  # 1. If birthgroup is CP and alpha male is Legolas, set tenure end date to
+  #     the end date of his first tenure in CPRM
+  # 2. If birthgroup is CPRM &  alpha male is Legolas & his first tenure
+  #     in CPRM (was alpha male twice in the group): ==> use his tenure start from
+  #     CP-group. CPRM and CPAD are the results of CP-fission and Legolas remained
+  #     alpha in one of the subgroup (thus, no replacement).
+  
+  # Step 3: Only keep AMRs that happened before DOB AMRs happening after
+  #  DOB will come in the next query. Also remove AMRs that happened after
+  # the departure of an infant because those are not relevant.
+  
+  # Step 4: Only keep the AM with the most recent tenure start
+  
+  infant_current_am <- infant_biography %>% 
+    select(NameOf, GroupAtBirthCode, DOB, DepartDate) %>% 
+    left_join(select(amt, GroupCode, AlphaMale, AMT_DateBegin, AMT_DateEnd), by = c("GroupAtBirthCode" = "GroupCode")) %>% 
+    mutate(AMT_DateEnd = case_when(GroupAtBirthCode == "CP" &
+                                     AlphaMale == "Legolas" ~ legolas_cprm_end_1,
+                                   TRUE ~ AMT_DateEnd),
+           AMT_DateBegin = case_when(GroupAtBirthCode == "CPRM" &
+                                       AlphaMale == "Legolas" &
+                                       AMT_DateBegin == legolas_cprm_start_1 ~ legolas_cp_start,
+                                     TRUE ~ AMT_DateBegin)) %>% 
+    mutate(Days_since_AMR = difftime(DOB, AMT_DateBegin, unit = "days")) %>% 
+    filter(AMT_DateBegin <= DOB & AMT_DateBegin <= DepartDate) %>% 
+    group_by(NameOf) %>% 
+    filter(Days_since_AMR == min(Days_since_AMR)) %>% 
+    ungroup
+  
+  ### For each infant, determine the next AM and tenure start after birth -------------------------------------------------
+  
+  # Step 1: As above, correct for the CP-CPAD/CPRM fission: if born after the
+  # beginning of Legolas tenure in CP, use the information which group (CPAD/CPRM)
+  # individuals joined for the next AM. Note that field is NA in case the
+  # infant departed before fission.
+  
+  # Step 2: Join infant biography with alpha male tenures
+  
+  # Step 3: Filter out lines that indicate Legolas as the next AM after the
+  # fission of CP because this was no change (has to be done before filtering
+  # below)
+  
+  # Step 4: Only keep AMRs that happened after DOB but while the infant was
+  # still around (i.e. before depart date)
+  
+  # Step 5: Determine the days until the next AM for all remaining possibilities,
+  # then only keep the first that happened.
+  
+  infant_next_am <- infant_biography %>% 
+    mutate(GroupAfterFissionCode = case_when(GroupAtBirthCode == "CP" & DOB >= legolas_cp_start ~ GroupAfterFissionCode,
+                                             TRUE ~ GroupAtBirthCode)) %>% 
+    select(NameOf, GroupAtBirthCode, GroupAfterFissionCode, DOB, DepartDate) %>% 
+    left_join(select(amt, GroupCode, Next_AlphaMale = AlphaMale,
+                     Next_AMT_DateBegin = AMT_DateBegin,
+                     Next_AMT_DateEnd = AMT_DateEnd),
+              by = c("GroupAfterFissionCode" = "GroupCode")) %>% 
+    filter(!(GroupAtBirthCode == "CP" & GroupAfterFissionCode == "CPRM" & Next_AMT_DateBegin == legolas_cprm_start_1) &
+             Next_AMT_DateBegin > DOB &
+             Next_AMT_DateBegin < DepartDate) %>% 
+    mutate(Days_to_next_AMR = difftime(Next_AMT_DateBegin, DOB, unit = "days")) %>% 
+    group_by(NameOf) %>% 
+    filter(Days_to_next_AMR == min(Days_to_next_AMR)) %>% 
+    ungroup
+  
+  ### Combine to one table and add comments ------------------------------------------------------------------------------
+  
+  infant_table <- infant_current_am %>% 
+    full_join(infant_next_am, by = c("NameOf", "DOB", "GroupAtBirthCode", "DepartDate")) %>% 
+    mutate(Comment1 = case_when(GroupAtBirthCode == "CPRM" & AlphaMale == "Legolas" &
+                                  AMT_DateBegin == legolas_cp_start ~ "Set AMT_DateBegin to Legolas' AMT begin in CP"),
+           Comment2 = case_when(is.na(AMT_DateBegin) ~ "Probably, DOB estimated and alpha male therefore not know at that time"),
+           Comment3 = case_when(DepartDate < AMT_DateEnd & is.na(Next_AlphaMale) ~ "Infant already departed when the next AMR happened"),
+           Comment = paste(Comment1, Comment2, Comment3, sep = "; "),
+           Comment = str_remove_all(Comment, "NA; |; NA|NA"),
+           Comment = case_when(Comment == "" ~ NA_character_,
+                               TRUE ~ Comment)) %>% 
+    select(-Comment1, -Comment2, -Comment3)
+  
+  
+  ### Add infant bio data and derive new variables -------------------------------------------------------------------------
+  
+  infant_table <- left_join(
+    select(infant_biography, -GroupAfterFissionCode),
+    infant_table, by = c("NameOf", "DOB", "GroupAtBirthCode", "DepartDate")) %>%
+    mutate(AgeAtDepart = difftime(DepartDate, DOB, units = "days"),
+           Survived1Y = case_when(AgeAtDepart > 365 ~ "Yes",
+                                  AgeAtDepart < 365 & DepartType == "End Of Observation" ~ "less than 1 year at end of observation",
+                                  TRUE ~ "No")) %>%
+    select(Mother, InfantID, NameOf, Sex, GroupAtBirthCode,
+           GroupAfterFissionCode, DOB, DepartDate, AgeAtDepart, Survived1Y,
+           AlphaMale, AMT_DateBegin, AMT_DateEnd, Days_since_AMR, Next_AlphaMale,
+           Next_AMT_DateBegin, Next_AMT_DateEnd, Days_to_next_AMR,
+           AMT_Comment = Comment, GroupLastListed, DepartType, CauseOfDeath, DeathComments)
+  
+  return(infant_table)
+}
+
 #' Get table with infants including the risk of infanticide
-#' as a consequence of alpha male reversals
+#' as a consequence of alpha male reversals - OLD FUNCTION!!!
 #'
 #' Unstable (i.e. risky) periods start with the end of an alpha alpha male tenureship
 #' and infants younger than 1 year are assumed to be at risk.
@@ -90,9 +263,9 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
 #'
 #' @export
 #' @examples
-#' get_infant_table (paceR_db)
+#' get_infant_table.old (paceR_db)
 
-get_infant_table <- function(paceR_db, full = TRUE, projectID = 1){
+get_infant_table.old <- function(paceR_db, full = TRUE, projectID = 1){
   
   individuals <- getv_Individual (paceR_db) %>% 
     select (-DayDifference, - Phenotype) %>% 

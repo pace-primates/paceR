@@ -2,23 +2,22 @@
 % Please edit documentation in R/generate-pace-life-history-tables.R
 \name{get_infant_table}
 \alias{get_infant_table}
-\title{Get table with infants including the risk of infanticide
-as a consequence of alpha male reversals}
+\title{Get table with infants including the risk of infanticide as a consequence of
+alpha male reversals - NEW FUNCTION!!!}
 \usage{
-get_infant_table(paceR_db, full = TRUE, projectID = 1)
+get_infant_table(paceR_db, full = TRUE)
 }
 \arguments{
-\item{paceR_db}{The src_mysql connection to the paceR Database (view-collection).}
+\item{paceR_db}{The src_mysql connection to the paceR Database
+(view-collection).}
 
-\item{full}{Option to return the full table (TRUE) or just a condensed version (FALSE). Default is TRUE.}
-
-\item{projectID}{Option to get data only from specific project (1-7?), standard is set to 1 (Santa Rosa)}
+\item{full}{Option to return the full table (TRUE) or just a condensed
+version (FALSE). Default is TRUE. CURRENTLY NOT USED.}
 }
 \description{
-Unstable (i.e. risky) periods start with the end of an alpha alpha male tenureship
-and infants younger than 1 year are assumed to be at risk.
-This does not count for infants conceived after the takeover
-(i.e. born more than 5.5 months = 165 days after the takeover)
+This function determines: 1) Alpha male (AM) at the time of birth, 2) days
+since AM has been AM, 3) following AM, and 4) days from DOB until next AM
+becomes AM
 }
 \examples{
 get_infant_table (paceR_db)

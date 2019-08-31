@@ -2,7 +2,6 @@
 % Please edit documentation in R/get-homerange.R, R/homerange-functions.R
 \name{area.BRB}
 \alias{area.BRB}
-\alias{area.BRB}
 \title{Updated BRB code}
 \usage{
 area.BRB(x = NULL, start.date = NULL, end.date = NULL, hab = NULL,
@@ -45,8 +44,6 @@ area.BRB(x = NULL, start.date = NULL, end.date = NULL, hab = NULL,
 \item{vv}{definition}
 }
 \description{
-Updated BRB code
-
 For the original function, see adehabitatHR::BRB
 }
 \examples{

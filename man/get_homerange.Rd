@@ -5,7 +5,8 @@
 \title{Calculate home ranges for time intervals}
 \usage{
 get_homerange(ranging_waypoints, start_date = NULL, ints_per_year = 1,
-  hr_periods = NULL, min_nb_reloc = NULL, output = c("ud", "hr", "ob"))
+  hr_periods = NULL, min_nb_reloc = NULL, output = c("ud", "hr",
+  "ob"))
 }
 \arguments{
 \item{start_date}{Begin of first time interval. By default (NULL), Jan 1st of the earliest timestamp in ranging dataset - NOT YET IMPLEMENTED}

@@ -4,8 +4,9 @@
 \alias{biomass_avail_hr}
 \title{Calcuate available biomass per homerange using the indices as weights.}
 \usage{
-biomass_avail_hr(group, period_start_date, period_end_date, group_period_label,
-  hr_type_incl = 95, hr_sf, tr_geom, tr_pheno_fpv, indices, figs_sf)
+biomass_avail_hr(group, period_start_date, period_end_date,
+  group_period_label, hr_type_incl = 95, hr_sf, tr_geom, tr_pheno_fpv,
+  indices, figs_sf)
 }
 \arguments{
 \item{group}{def}
