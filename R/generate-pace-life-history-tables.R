@@ -10,6 +10,15 @@
 
 get_biography <- function(paceR_db, full = TRUE, projectID = 1){
   
+  # TO DO (possibly not all necessary):
+  # Following things have to be controlled:
+  # Compare DateOfFirstSighting with firstalive
+  # Compare DateOfDeathFinal with lastcensus
+  # Check cases where last censusstatus is "Alive" but long time ago --> really end of observation?
+  # Check also if in cases where last censusstatus is "Alive" the individual is not dead.
+  # What ifseveral lines in the end have status "Missing"? -> used lastalive as departdate and laststatus as depart type. Any errors because of that?
+  # EntryType is missing
+  
   individs <- getv_Individual(paceR_db) %>% 
     select (-DayDifference, -Phenotype) %>%
     filter (ProjectID %in% projectID)
@@ -62,18 +71,12 @@ get_biography <- function(paceR_db, full = TRUE, projectID = 1){
     # sorted out: ProjectID, PrimateSpecies, BirthdateSource, DateOfFirstSighting
     # AgeClassAtFirstSighting, GroupAtFirstSightingName, GroupAtFirstSightingCode, DeathComments
     }
+ 
+  message("Info: There was a short replacement in CPRM by TOYO. Treat infanticide risk of those infants very carefully,
+  depending on who might have sired them, etc.")
   
   return (biography)
-
-  # Following things have to be controlled:
-  # Compare DateOfFirstSighting with firstalive
-  # Compare DateOfDeathFinal with lastcensus
-  # Check cases where last censusstatus is "Alive" but long time ago --> really end of observation?
-  # Check also if in cases where last censusstatus is "Alive" the individual is not dead.
-  # What ifseveral lines in the end have status "Missing"? -> used lastalive as departdate and laststatus as depart type. Any errors because of that?
-  # EntryType is missing
-
-}
+  }
 
 
 #' Get table with infants including the risk of infanticide as a consequence of
