@@ -3,9 +3,14 @@ Sys.setenv(TZ = 'UTC')
 
 load_pace_packages()
 
-system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
-pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
-paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
+# system('ssh -f camposf@pacelab.ucalgary.ca -L 3307:localhost:3306 -N')
+# pace_db <- src_mysql(group = "PACE", user = "camposf", dbname = "monkey", password = NULL)
+# paceR_db <- src_mysql(group = "PACE", user = "camposf", dbname = "paceR", password = NULL)
+pace_db <- DBI::dbConnect(RMySQL::MySQL(), group = "PACE", user = "camposf",
+                          host = "127.0.0.1", dbname = "monkey")
+paceR_db <- DBI::dbConnect(RMySQL::MySQL(), group = "PACE", user = "camposf",
+                           host = "127.0.0.1", dbname = "paceR")
+
 
 # Get data from PACE
 
