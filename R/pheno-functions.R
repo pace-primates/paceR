@@ -31,7 +31,8 @@ pheno_prep_sr <- function(pheno = NULL, exclude_species = "", item = "Fruit",
   # New useful columns
   pheno <- pheno %>%
     mutate(year_of = year(DateOf),
-           month_of = month(DateOf))
+           month_of = month(DateOf),
+           PhenologyScore = as.numeric(PhenologyScore))
 
   # Exclude 2006 pheno data because no maturity info
   pheno <- pheno %>% filter(year_of > 2006)
